@@ -1,27 +1,36 @@
 interface Selectable {
-    
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    getBoundaryPath(): Path2D;
+    onSelected(last: Selectable|null): void;
+    onDrag(lastMousePos: [number, number], newMousePos: [number, number]): void;
 }
 
-class BoardElement {
+abstract class BoardElement implements Selectable {
     protected _layer!: BoardLayer;
     protected _x!: number;
     protected _y!: number;
-    protected _imgSrc!: HTMLImageElement;
     protected _width!: number;
     protected _height!: number;
-    public constructor(layer: BoardLayer, x: number, y: number, imgSrc: HTMLImageElement, width?: number, height?: number) {
-        this.x = x;
-        this.y = y;
-        this.imgSrc = imgSrc;
-        this.width = width ?? imgSrc.width;
-        this.height = height ?? imgSrc.height;
-
-        // Define this after everything else to avoid update events being sent.
+    public constructor(layer: BoardLayer, x: number, y: number, width: number, height: number) {
         this._layer = layer;
+        this._x = x;
+        this._y = y;
+        this._width = width;
+        this._height = height;
     }
-    private onUpdate() {
+    public abstract render(graphics: BoardGraphicHelper): void; 
+    public abstract getBoundaryPath(): Path2D;
+    protected onUpdate() {
         if(this._layer != undefined)
             this._layer.onElementModified(this);
+    }
+    public abstract onSelected(last: Selectable | null): void;
+    public abstract onDrag(lastMousePos: [number, number], newMousePos: [number, number]): void;
+    public get layerId(): number {
+        return this._layer.id;
     }
     public get x(): number {
         return this._x;
@@ -35,13 +44,6 @@ class BoardElement {
     }
     public set y(y: number) {
         this._y = y;
-        this.onUpdate();
-    }
-    public get imgSrc(): HTMLImageElement {
-        return this._imgSrc;
-    }
-    public set imgSrc(imgSrc: HTMLImageElement) {
-        this._imgSrc = imgSrc;
         this.onUpdate();
     }
     public get width(): number {
@@ -60,6 +62,97 @@ class BoardElement {
     }
 }
 
+class Token extends BoardElement {
+    protected _imgSrc!: HTMLImageElement;
+    public constructor(layer: BoardLayer, x: number, y: number, imgSrc: HTMLImageElement, width?: number, height?: number) {
+        super(layer, x, y, width ?? imgSrc.width, height ?? imgSrc.height);
+        this._imgSrc = imgSrc;
+    }
+    public render(graphics: BoardGraphicHelper): void {
+        graphics.drawToken(this);
+    }
+    public getBoundaryPath(): Path2D {
+        const { _layer, x, y, width, height } = this;
+
+        // Create an offscreen canvas to capture the image.
+        let offscreenCanvas = new OffscreenCanvas(width, height);
+        let offscreenCanvasCtx = offscreenCanvas.getContext('2d');
+        offscreenCanvasCtx?.drawImage(this.imgSrc, 0, 0, width, height);
+        let imageData = offscreenCanvasCtx?.getImageData(0,0, width, height).data as Uint8ClampedArray;
+
+        function isTransparent(x: number, y: number): boolean {
+            // Check if the pixels are outside the image- if they are, considering them transparent.
+            if(x < 0 || x >= width|| y < 0 || y >= height)
+                return true;
+
+            let colorIndex = (y * width + x) * 4;
+            let alphaValue = imageData[colorIndex + 3];
+
+            return alphaValue <= 0;
+        }
+
+        let points: [number, number][] = [];
+
+        for(let x1 = 0; x1 < width; x1++) {
+            for(let y1 = 0; y1 < height; y1++) {
+                if(!isTransparent(x1, y1)) {
+                    if((isTransparent(x1 + 1, y1) || isTransparent(x1 - 1, y1) || isTransparent(x1, y1 + 1) || isTransparent(x1, y1 - 1)))
+                        points.push([x1, y1]);
+                }
+            }
+        }
+
+        // Researched some algorithms and it seems using the first half of a Graham Scan for a convex hull works best here.
+
+        // Get Lowest Y and Leftmost
+        let p0 = points.reduce((previous, current) => (current[1] < previous[1]) || (current[1] === previous[1] && current[0] < previous[0]) ? current : previous);
+
+        function sqrDistance(p1: [number, number], p2: [number, number]): number {
+            return (p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2;
+        }
+
+        points.sort((a, b) => {
+            let diff = Math.atan2(a[1] - p0[1], a[0] - p0[0]) - Math.atan2(b[1] - p0[1], b[0] - p0[0]);
+            if(diff == 0) {
+                return sqrDistance(p0, a) - sqrDistance(p0, b);
+            }
+            return diff;
+        });
+
+        let uniquePoints: [number, number][] = [points[0]];
+        
+        // Encountered a common edgecase where values like [1, 24] and [24, 1] who share the same angle would cause errors. This solves this by removing the closest to p0 of those values.
+        for(let i = 1; i < points.length; i++) {
+            if(points[i - 1][0] != points[i][1] && points[i - 1][1] != points[i][0])
+                uniquePoints.push(points[i - 1]);
+        }
+
+
+        let outlinePath = new Path2D();
+        outlinePath.moveTo(_layer.board.toVirtualX(x + uniquePoints[0][0]), _layer.board.toVirtualY(y + uniquePoints[0][1]));
+        for(let i = 1; i < uniquePoints.length; i++) {
+            outlinePath.lineTo(_layer.board.toVirtualX(x + uniquePoints[i][0]), _layer.board.toVirtualY(y + uniquePoints[i][1]))
+        }
+        outlinePath.closePath();
+
+        return outlinePath;
+    }
+    public onSelected(last: Selectable): void {
+        this._layer.moveToTop(this);
+    }
+    public onDrag(lastMousePos: [number, number], mousePos: [number, number]): void {
+        this.x += (mousePos[0] - lastMousePos[0]) / this._layer.board.scale;
+        this.y += (mousePos[1] - lastMousePos[1]) / this._layer.board.scale;
+    }
+    public get imgSrc(): HTMLImageElement {
+        return this._imgSrc;
+    }
+    public set imgSrc(imgSrc: HTMLImageElement) {
+        this._imgSrc = imgSrc;
+        this.onUpdate();
+    }
+}
+
 class BoardLayer {
     public readonly board: Board;
     public readonly id: number;
@@ -71,6 +164,19 @@ class BoardLayer {
         this.board = board;
         this.id = id;
     }
+    public moveToTop(element: BoardElement) {
+
+        for(let i = 0; i < this.elements.length; i++) {
+            if(this.elements[i] === element) {
+                this.elements[i] = this.elements[this.elements.length - 1];
+                this.elements[this.elements.length - 1] = element;
+                this.board.render();
+                return;
+            }
+        }
+
+        throw new Error("Element does not exist in layer.");
+    }
     public addElement(element: BoardElement) {
         this.elements.push(element);
         this.board.render();
@@ -81,7 +187,8 @@ class BoardLayer {
 }
 
 class Board {
-    private layers: BoardLayer[] = [];
+    // _layers is **always** sorted.
+    private _layers: BoardLayer[] = [];
     private readonly _canvas: HTMLCanvasElement;
     private readonly _graphics: BoardGraphicHelper;
     private _xOffset: number = 0;
@@ -115,35 +222,58 @@ class Board {
         return ((x >= virtualX && x <= virtualX + width) && (y >= virtualY && y <= virtualY + height));
     }
     public isInElement(element: BoardElement, x: number, y: number): boolean {
-        return this._graphics.isInImage(element, x, y);
+        return this._graphics.isPointInElement(element, x, y);
+    }
+    public getElementsAt(x: number, y: number, layer?: number): BoardElement[] {
+        const elements = [];
+        if(layer){
+            const l = this.getLayer(layer);
+            if(l == null)
+                throw new Error("Specified layer does not exist.");
+            for(const element of l.elements) {
+                if(this.isInElement(element, x, y))
+                    elements.push(element);
+            }
+        } else {
+            for(const element of this.elements) {
+                if(this.isInElement(element, x, y))
+                    elements.push(element);
+            }
+        }
+
+        return elements;
+    }
+    public getTopElementAt(x: number, y: number, layer?: number) : BoardElement|null {
+        const result = this.getElementsAt(x, y, layer);
+        return result.length == 0 ? null : result[result.length - 1];
     }
     public createLayer(id: number): BoardLayer {
         if(this.getLayer(id) != null)
             throw new Error("Cannot create a layer that already exists.");
 
         const layer = new BoardLayer(this, id);
-        this.layers.push(layer);
+        this._layers.push(layer);
 
         this.sortLayers();
         
         return layer;
     }
     public getLayer(id: number): BoardLayer|null {
-        for (const layer of this.layers) {
+        for (const layer of this._layers) {
             if(layer.id === id)
                 return layer;
         }
         return null;
     }
     public sortLayers() {
-        this.layers.sort((a, b) => {return a.id - b.id})
+        this._layers.sort((a, b) => {return a.id - b.id})
     }
-    public createElement(layerId: number, x: number, y: number, imgSrc: HTMLImageElement, width?: number, height?: number): BoardElement {
+    public createToken(layerId: number, x: number, y: number, imgSrc: HTMLImageElement, width?: number, height?: number): BoardElement {
         let layer: BoardLayer|null = this.getLayer(layerId);
         if(layer == null)
             layer = this.createLayer(layerId);
 
-        const element: BoardElement = new BoardElement(layer, x, y, imgSrc, width, height);
+        const element: BoardElement = new Token(layer, x, y, imgSrc, width, height);
         layer.addElement(element);
 
         return element;
@@ -156,11 +286,20 @@ class Board {
 
         this._graphics.drawGrid();
 
-        for(const layer of this.layers) {
+        for(const layer of this._layers) {
             for(const element of layer.elements) {
-                this._graphics.drawImage(element);
+                this._graphics.renderElement(element);
             }
         }
+    }
+    private get elements(): BoardElement[] {
+        const elements: BoardElement[] = [];
+        for(const layer of this._layers) {
+            for(const element of layer.elements) {
+                elements.push(element);
+            }
+        }
+        return elements;
     }
     public get width(): number {
         return this._canvas.clientWidth;
@@ -237,84 +376,18 @@ class BoardGraphicHelper {
     
         this._ctx.stroke();
     }
-    public getImagePath(image: BoardElement): Path2D {
+    public drawToken(token: Token) {
         const { scale } = this._board;
-        const { x, y, imgSrc, width, height } = image;
-        const scaledWidth = width * scale;
-        const scaledHeight = height * scale;
-
-        // Create an offscreen canvas to capture the image.
-        let offscreenCanvas = new OffscreenCanvas(scaledWidth, scaledHeight);
-        let offscreenCanvasCtx = offscreenCanvas.getContext('2d');
-        offscreenCanvasCtx?.drawImage(imgSrc, 0, 0, scaledWidth, scaledHeight);
-        let imageData = offscreenCanvasCtx?.getImageData(0,0, scaledWidth, scaledHeight).data as Uint8ClampedArray;
-
-        function isTransparent(x: number, y: number): boolean {
-            // Check if the pixels are outside the image- if they are, considering them transparent.
-            if(x < 0 || x >= scaledWidth|| y < 0 || y >= scaledHeight)
-                return true;
-
-            let colorIndex = (y * width + x) * 4;
-            let alphaValue = imageData[colorIndex + 3];
-
-            return alphaValue <= 0;
-        }
-
-        let points: [number, number][] = [];
-
-        for(let x1 = 0; x1 < width; x1++) {
-            for(let y1 = 0; y1 < height; y1++) {
-                if(!isTransparent(x1, y1)) {
-                    if((isTransparent(x1 + 1, y1) || isTransparent(x1 - 1, y1) || isTransparent(x1, y1 + 1) || isTransparent(x1, y1 - 1)))
-                        points.push([x1, y1]);
-                }
-            }
-        }
-
-        // Researched some algorithms and it seems using the first half of a Graham Scan for a convex hull works best here.
-
-        // Get Lowest Y and Leftmost
-        let p0 = points.reduce((previous, current) => (current[1] < previous[1]) || (current[1] === previous[1] && current[0] < previous[0]) ? current : previous);
-
-        function sqrDistance(p1: [number, number], p2: [number, number]): number {
-            return (p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2;
-        }
-
-        points.sort((a, b) => {
-            let diff = Math.atan2(a[1] - p0[1], a[0] - p0[0]) - Math.atan2(b[1] - p0[1], b[0] - p0[0]);
-            if(diff == 0) {
-                return sqrDistance(p0, a) - sqrDistance(p0, b);
-            }
-            return diff;
-        });
-
-        let uniquePoints: [number, number][] = [points[0]];
-        
-        // Encountered a common edgecase where values like [1, 24] and [24, 1] who share the same angle would cause errors. This solves this by removing the closest to p0 of those values.
-        for(let i = 1; i < points.length; i++) {
-            if(points[i - 1][0] != points[i][1] && points[i - 1][1] != points[i][0])
-                uniquePoints.push(points[i - 1]);
-        }
-
-
-        let outlinePath = new Path2D();
-        outlinePath.moveTo(this._board.toVirtualX(x + uniquePoints[0][0]), this._board.toVirtualY(y + uniquePoints[0][1]));
-        for(let i = 1; i < uniquePoints.length; i++) {
-            outlinePath.lineTo(this._board.toVirtualX(x + uniquePoints[i][0]), this._board.toVirtualY(y + uniquePoints[i][1]))
-        }
-        outlinePath.closePath();
-
-        return outlinePath;
-    }
-    public drawImage(image: BoardElement) {
-        const { scale } = this._board;
-        const { x, y, imgSrc, width, height } = image;
+        const { x, y, imgSrc, width, height } = token;
 
         this._ctx.drawImage(imgSrc, this._board.toVirtualX(x), this._board.toVirtualY(y), width * scale, height * scale);
     }
-    public isInImage(image: BoardElement, x: number, y: number): boolean {
-        const path = this.getImagePath(image);
-        this._ctx.stroke(path); // REMOVE
-        return this._ctx.isPointInPath(path, x, y);
+    public renderElement(element: BoardElement) {
+        element.render(this);
+    }
+    public isPointInElement(element: BoardElement, x: number, y: number): boolean {
+        const bounds = element.getBoundaryPath();
+        this._ctx.stroke(bounds);
+        return this._ctx.isPointInPath(bounds, x, y);
     }
 }
