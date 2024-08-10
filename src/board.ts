@@ -4,8 +4,9 @@ interface Selectable {
     width: number;
     height: number;
     getBoundaryPath(): Path2D;
-    onSelected(last: Selectable|null): void;
-    onDrag(lastMousePos: [number, number], newMousePos: [number, number]): void;
+    onSelected(): boolean;
+    onDeselected(): boolean;
+    onDrag(lastMousePos: [number, number], mousePos: [number, number]): void;
 }
 
 abstract class BoardElement implements Selectable {
@@ -27,7 +28,8 @@ abstract class BoardElement implements Selectable {
         if(this._layer != undefined)
             this._layer.onElementModified(this);
     }
-    public abstract onSelected(last: Selectable | null): void;
+    public abstract onSelected(): boolean;
+    public abstract onDeselected(): boolean;
     public abstract onDrag(lastMousePos: [number, number], newMousePos: [number, number]): void;
     public get layerId(): number {
         return this._layer.id;
@@ -71,6 +73,7 @@ class Token extends BoardElement {
     public render(graphics: BoardGraphicHelper): void {
         graphics.drawToken(this);
     }
+    // TODO - URGENT : Find a more efficient way to do this. It's incredibly slow. Look into marching squares.
     public getBoundaryPath(): Path2D {
         const { _layer, x, y, width, height } = this;
 
@@ -122,6 +125,7 @@ class Token extends BoardElement {
         let uniquePoints: [number, number][] = [points[0]];
         
         // Encountered a common edgecase where values like [1, 24] and [24, 1] who share the same angle would cause errors. This solves this by removing the closest to p0 of those values.
+        // This problem still seems to occur. TODO: Fix this.
         for(let i = 1; i < points.length; i++) {
             if(points[i - 1][0] != points[i][1] && points[i - 1][1] != points[i][0])
                 uniquePoints.push(points[i - 1]);
@@ -137,8 +141,12 @@ class Token extends BoardElement {
 
         return outlinePath;
     }
-    public onSelected(last: Selectable): void {
-        this._layer.moveToTop(this);
+    public onSelected(): boolean {
+        this._layer.moveElementToTop(this);
+        return true;
+    }
+    public onDeselected(): boolean {
+        return true;
     }
     public onDrag(lastMousePos: [number, number], mousePos: [number, number]): void {
         this.x += (mousePos[0] - lastMousePos[0]) / this._layer.board.scale;
@@ -153,10 +161,15 @@ class Token extends BoardElement {
     }
 }
 
+interface BoardGraphic {
+    render(graphics: BoardGraphicHelper): void;
+}
+
 class BoardLayer {
     public readonly board: Board;
     public readonly id: number;
     public elements: BoardElement[] = [];
+    public graphics: BoardGraphic[] = [];
     public constructor(board: Board, id: number) {
         if(id < 0)
             throw new Error("'id' must be greater than or equal to 0.");
@@ -164,7 +177,7 @@ class BoardLayer {
         this.board = board;
         this.id = id;
     }
-    public moveToTop(element: BoardElement) {
+    public moveElementToTop(element: BoardElement) {
 
         for(let i = 0; i < this.elements.length; i++) {
             if(this.elements[i] === element) {
@@ -177,9 +190,37 @@ class BoardLayer {
 
         throw new Error("Element does not exist in layer.");
     }
+    public moveGraphicToTop(graphic: BoardGraphic) {
+
+        for(let i = 0; i < this.graphics.length; i++) {
+            if(this.graphics[i] === graphic) {
+                this.graphics[i] = this.graphics[this.graphics.length - 1];
+                this.graphics[this.graphics.length - 1] = graphic;
+                this.board.render();
+                return;
+            }
+        }
+
+        throw new Error("Graphic does not exist in layer.");
+    }
     public addElement(element: BoardElement) {
         this.elements.push(element);
         this.board.render();
+    }
+    public addGraphic(graphic: BoardGraphic) {
+        this.graphics.push(graphic);
+        this.board.render();
+    }
+    public removeGraphic(graphic: BoardGraphic) {
+        for(let i = 0; i < this.graphics.length; i++) {
+            if(this.graphics[i] === graphic) {
+                this.graphics.splice(i);
+                this.board.render();
+                return;
+            }
+        }
+
+        throw new Error("Graphic does not exist in layer.");
     }
     public onElementModified(element: BoardElement) {
         this.board.onElementModified(this.id, element);
@@ -188,7 +229,8 @@ class BoardLayer {
 
 class Board {
     // _layers is **always** sorted.
-    private _layers: BoardLayer[] = [];
+    private _layers: BoardLayer[] = [new BoardLayer(this, 99)];
+    private _graphicsLayer: BoardGraphic[] = [];
     private readonly _canvas: HTMLCanvasElement;
     private readonly _graphics: BoardGraphicHelper;
     private _xOffset: number = 0;
@@ -223,6 +265,15 @@ class Board {
     }
     public isInElement(element: BoardElement, x: number, y: number): boolean {
         return this._graphics.isPointInElement(element, x, y);
+    }
+    public elementsInRect(x: number, y: number, width: number, height: number): BoardElement[] {
+        const elements: BoardElement[] = [];
+        for(const element of this.elements) {
+            if(this.toVirtualX(element.x) + (element.width * this.scale) > x && this.toVirtualX(element.x) < x + width && (this.toVirtualY(element.y) + (element.height * this.scale) > y && this.toVirtualY(element.y) < y + height)) {
+                elements.push(element);
+            }
+        }
+        return elements;
     }
     public getElementsAt(x: number, y: number, layer?: number): BoardElement[] {
         const elements = [];
@@ -290,6 +341,9 @@ class Board {
             for(const element of layer.elements) {
                 this._graphics.renderElement(element);
             }
+            for(const graphic of layer.graphics) {
+                this._graphics.renderGraphic(graphic);
+            }
         }
     }
     private get elements(): BoardElement[] {
@@ -347,47 +401,55 @@ class Board {
         this._cellSize = cellSize;
         this.render();
     }
+    public get graphicLayer(): BoardLayer {
+        return this.getLayer(99) as BoardLayer;
+    }
 }
 
 class BoardGraphicHelper {
-    private readonly _board: Board;
-    private readonly _ctx: CanvasRenderingContext2D;
+    public readonly board: Board;
+    public readonly context: CanvasRenderingContext2D;
     public constructor(board: Board, ctx: CanvasRenderingContext2D) {
-        this._board = board;
-        this._ctx = ctx;
+        this.board = board;
+        this.context = ctx;
     }
     public clear() {
-        this._ctx.clearRect(0, 0, this._board.width, this._board.height);
+        this.context.clearRect(0, 0, this.board.width, this.board.height);
     }
     public drawGrid() {
-        const { width, height, xOffset, yOffset, scale, cellSize } = this._board;
+        const { width, height, xOffset, yOffset, scale, cellSize } = this.board;
 
-        this._ctx.beginPath();
+        this.context.beginPath();
 
         for(let x = (xOffset % cellSize) * scale; x <= width; x += cellSize * scale) {
-            this._ctx.moveTo(x, 0);
-            this._ctx.lineTo(x, height);
+            this.context.moveTo(x, 0);
+            this.context.lineTo(x, height);
         }
     
         for(let y = (yOffset % cellSize) * scale; y <= height; y += cellSize * scale) {
-            this._ctx.moveTo(0, y);
-            this._ctx.lineTo(width, y);
+            this.context.moveTo(0, y);
+            this.context.lineTo(width, y);
         }
     
-        this._ctx.stroke();
+        this.context.stroke();
     }
     public drawToken(token: Token) {
-        const { scale } = this._board;
+        const { scale } = this.board;
         const { x, y, imgSrc, width, height } = token;
 
-        this._ctx.drawImage(imgSrc, this._board.toVirtualX(x), this._board.toVirtualY(y), width * scale, height * scale);
+        this.context.drawImage(imgSrc, this.board.toVirtualX(x), this.board.toVirtualY(y), width * scale, height * scale);
     }
     public renderElement(element: BoardElement) {
         element.render(this);
     }
+    public renderGraphic(graphic: BoardGraphic) {
+        graphic.render(this);
+    }
     public isPointInElement(element: BoardElement, x: number, y: number): boolean {
         const bounds = element.getBoundaryPath();
-        this._ctx.stroke(bounds);
-        return this._ctx.isPointInPath(bounds, x, y);
+        return this.context.isPointInPath(bounds, x, y);
+    }
+    public drawDebugBorderOn(element: Selectable) {
+        this.context.stroke(element.getBoundaryPath());
     }
 }

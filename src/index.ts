@@ -10,54 +10,66 @@ let token2 = board.createToken(2, 128,64, imgEdwin, 128, 128);
 let token3 = board.createToken(1, 32,64, imgEdwin, 64, 64);
 
 class Game {
+    public currentTool: Tool = new SelectionTool(this);
     public snapToGrid: boolean = true;
     private _board: Board;
-    private _selected: Selectable|null = null;
+    private _selection: Selectable[] = [];
     private _lastMousePos: [number, number] = [0,0];
-    private _performDrag: boolean = false;
     private _performScrollDrag: boolean = false;
+    private _outlinesGraphic: BoardGraphic & {selectables: Selectable[]} = {
+        selectables: [],
+        render: function (graphics: BoardGraphicHelper): void {
+            graphics.context.strokeStyle = "red";
+            graphics.context.lineWidth = 2;
+            for(const selectable of this.selectables)
+                graphics.drawDebugBorderOn(selectable);
+            graphics.context.strokeStyle = "black";
+            graphics.context.lineWidth = 1;
+        }
+    }
+
     public constructor(board: Board) {
         this._board = board;
+        this._board.graphicLayer.addGraphic(this._outlinesGraphic);
     }
-    public select(element: Selectable|null) {
-        const last = this._selected;
-        this._selected = element;
-        this.onSelected(last, this._selected);
-        element?.onSelected(last);
-    }
-    // The element is initally selected here.
-    private onSelected(last: Selectable|null, selected: Selectable|null) {
-        if(!selected)
-            return;
-        
-        this._performDrag = true;
-    }
-    private onDragSelected(mousePos: [number, number]) {
-        if(this._selected){
-            this._selected.onDrag(this._lastMousePos, mousePos);
+    public select(selectable: Selectable|null) {
+        if(selectable === null)
+            this.clearSelection();
+        else if (!this._selection.includes(selectable) && selectable.onSelected()) {
+            this._selection.push(selectable);
+            
         }
+        this._outlinesGraphic.selectables = this.selection;
+        this.board.render();
+        console.log(this.selection);
     }
-    // A selected element has stopped being dragged. This is where any additional operations should take place.
-    private onDragSelectedEnd() {
-        if(!this._selected)
-            return;
-
-        if(this.snapToGrid) {
-            this._selected.x = Math.round(this._selected.x / this._board.cellSize) * this._board.cellSize;
-            this._selected.y = Math.round(this._selected.y / this._board.cellSize) * this._board.cellSize;
+    public deselect(selectable: Selectable) {
+        for(let i = 0; i < this._selection.length; i++) {
+            if(selectable == this._selection[i] && this._selection[i].onDeselected()) {
+                this._selection.splice(i);
+            }
         }
-
+        this._outlinesGraphic.selectables = this.selection;
+        this.board.render();
+    }
+    public clearSelection() {
+        // Slower than looping once here but ensures that deselect is always called when an element is removed from the selection.
+        for(const selectable of this._selection) {
+            this.deselect(selectable); 
+        }
     }
     private onScrollDrag(mousePos: [number, number]) {
         this._board.xOffset += (mousePos[0] - this._lastMousePos[0]) / this._board.scale;
         this._board.yOffset += (mousePos[1] - this._lastMousePos[1]) / this._board.scale;
     }
     public onMouseDown(e: MouseEvent) {
-        if(e.button == 0) {
-            this.select(board.getTopElementAt(e.clientX, e.clientY));
-        } else if (e.button == 1) {
+        const elm = board.getTopElementAt(e.clientX, e.clientY);
+
+        if (e.button == 1) {
             this._performScrollDrag = true;
         }
+
+        this.currentTool.onMouseDown(e, elm);
     }
     public onMouseMove(e: MouseEvent) {
         const mousePos: [number, number] = [e.clientX, e.clientY];
@@ -65,49 +77,44 @@ class Game {
         if(mousePos != this._lastMousePos) {
             if(this._performScrollDrag) {
                 this.onScrollDrag(mousePos);
-            } else if (this._performDrag) {
-                this.onDragSelected(mousePos);
+            } else {
+                this.currentTool.onMouseMove(this._lastMousePos, mousePos);
             }
         }   
 
         this._lastMousePos = mousePos;
     }
     public onMouseUp(e: MouseEvent) {
-        if(e.button == 0 && this._performDrag) {
-            this._performDrag = false;
-            this.onDragSelectedEnd();
-        }
-        else if(e.button == 1 && this._performScrollDrag){
+        const elm = board.getTopElementAt(e.clientX, e.clientY);
+
+        if(e.button == 1 && this._performScrollDrag){
             this._performScrollDrag = false;
         }
-    }
-    // This can definitely use a lot of cleanup but it's functional.
-    public onWheel(e: WheelEvent) {
 
+        this.currentTool.onMouseUp(e, elm);
+    }
+    public onWheel(e: WheelEvent) {
         const dir = -Math.sign(e.deltaY);
 
-        if(this._selected && this._performDrag) {
-            const newWidth = this._selected.width + this._board.cellSize * -dir;
-            const newHeight = this._selected.height + this._board.cellSize * -dir;
-
-            if(newWidth < this._board.cellSize || newHeight < this._board.cellSize)
-                return;
+        const scale = this._board.scale;
             
-            this._selected.x = (this._selected.x - (newWidth - this._selected.width) * 0.5);
-            this._selected.y = (this._selected.y - (newWidth - this._selected.height) * 0.5);
+        let speed = 0.1;
 
-            this._selected.width = newWidth;
-            this._selected.height = newHeight;
-        } else {
-            const scale = this._board.scale;
-            
-            let speed = 0.1;
+        if((scale + speed >= 3.5 && dir > 0) || (scale - speed <= 0.5 && dir < 0)) 
+            speed = 0;
 
-            if((scale + speed >= 3.5 && dir > 0) || (scale - speed <= 0.5 && dir < 0)) 
-                speed = 0;
+        this._board.scale += speed * dir;
 
-            this._board.scale += speed * dir;
-        }
+        this.currentTool.onWheel(e);
+    }
+    public get board(): Board {
+        return this._board;
+    }
+    public get selection(): Selectable[] {
+        return Array.from(this._selection);
+    }
+    public get selected(): boolean {
+        return this._selection.length != 0;
     }
 }
 
