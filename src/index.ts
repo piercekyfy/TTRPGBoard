@@ -10,19 +10,17 @@ let token2 = board.createToken(2, 128,64, imgEdwin, 128, 128);
 let token3 = board.createToken(1, 32,64, imgEdwin, 64, 64);
 
 class Game {
-    public currentTool: Tool = new SelectionTool(this);
+    public currentTool: Tool = new MoveTool(this);
     public snapToGrid: boolean = true;
     private _board: Board;
     private _selection: Selectable[] = [];
     private _lastMousePos: [number, number] = [0,0];
     private _performScrollDrag: boolean = false;
-    private _outlinesGraphic: BoardGraphic & {selectables: Selectable[]} = {
-        selectables: [],
-        render: function (graphics: BoardGraphicHelper): void {
+    private _outlinesGraphic: BoardGraphic = {
+        render: function (graphics: BoardGraphicHelper, caller: BoardElement): void {
             graphics.context.strokeStyle = "red";
             graphics.context.lineWidth = 2;
-            for(const selectable of this.selectables)
-                graphics.drawDebugBorderOn(selectable);
+            graphics.drawDebugBorderOn(caller);
             graphics.context.strokeStyle = "black";
             graphics.context.lineWidth = 1;
         }
@@ -30,33 +28,35 @@ class Game {
 
     public constructor(board: Board) {
         this._board = board;
-        this._board.graphicLayer.addGraphic(this._outlinesGraphic);
     }
     public select(selectable: Selectable|null) {
         if(selectable === null)
             this.clearSelection();
         else if (!this._selection.includes(selectable) && selectable.onSelected()) {
+            console.log("selected: " + selectable + " at " + selectable.x);
             this._selection.push(selectable);
-            
+            selectable.attachGraphic(this._outlinesGraphic);
         }
-        this._outlinesGraphic.selectables = this.selection;
         this.board.render();
-        console.log(this.selection);
     }
     public deselect(selectable: Selectable) {
         for(let i = 0; i < this._selection.length; i++) {
-            if(selectable == this._selection[i] && this._selection[i].onDeselected()) {
-                this._selection.splice(i);
+            if(selectable === this._selection[i] && this._selection[i].onDeselected()) {
+                console.log(selectable.x);
+                this._selection[i].removeGraphic(this._outlinesGraphic);
+                this._selection.splice(i, 1);
             }
         }
-        this._outlinesGraphic.selectables = this.selection;
         this.board.render();
     }
     public clearSelection() {
         // Slower than looping once here but ensures that deselect is always called when an element is removed from the selection.
-        for(const selectable of this._selection) {
+        const selection = Array.from(this.selection);
+        for(const selectable of selection) {
+            console.log("Deselecting: " + selectable.x);
             this.deselect(selectable); 
         }
+        console.log(this._selection);
     }
     private onScrollDrag(mousePos: [number, number]) {
         this._board.xOffset += (mousePos[0] - this._lastMousePos[0]) / this._board.scale;
