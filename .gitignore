@@ -1,2 +1,8 @@
 .vscode/
+node_modules/
+
 frontend/public/dist/
+
+backend/.env
+backend/public
+backend/dist

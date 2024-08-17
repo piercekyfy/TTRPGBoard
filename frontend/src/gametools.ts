@@ -1,4 +1,5 @@
-import { SelectableBoardElement, Board, BoardGraphicHelper, BoardGraphic } from './board';
+import { Board, BoardGraphics } from './board';
+import { SelectableElement, GraphicElement } from './board/elements';
 import {Game} from './game';
 
 export abstract class Tool {
@@ -8,11 +9,11 @@ export abstract class Tool {
     public constructor(game: Game) {
         this._game = game;
     }
-    public abstract onMouseDown(e: MouseEvent, on: SelectableBoardElement|null): void;
+    public abstract onMouseDown(e: MouseEvent, on: SelectableElement|null): void;
     public abstract onMouseMove(lastMousePos: [number, number], mousePos: [number, number]): void;
-    public abstract onMouseUp(e: MouseEvent, on: SelectableBoardElement|null): void;
+    public abstract onMouseUp(e: MouseEvent, on: SelectableElement|null): void;
     public abstract onWheel(e: WheelEvent): void;
-    protected get selection(): SelectableBoardElement[] {
+    protected get selection(): SelectableElement[] {
         return this._game.selection;
     }
     protected get selected(): boolean {
@@ -25,10 +26,10 @@ export abstract class Tool {
 
 export class MoveTool extends Tool {
     public override title = "Move";
-    protected _selected: SelectableBoardElement|null = null;
+    protected _selected: SelectableElement|null = null;
     protected _dragSelection: boolean = false;
     protected _dragging: boolean = false;
-    public onMouseDown(e: MouseEvent, on: SelectableBoardElement|null): void {
+    public onMouseDown(e: MouseEvent, on: SelectableElement|null): void {
 
         if(e.button != 0)
             return;
@@ -62,7 +63,7 @@ export class MoveTool extends Tool {
             this._selected.onDrag(lastMousePos, mousePos);
         }
     }
-    public onMouseUp(e: MouseEvent, on: SelectableBoardElement|null): void {
+    public onMouseUp(e: MouseEvent, on: SelectableElement|null): void {
         if(e.button != 0 || this._selected == null)
             return;
 
@@ -97,14 +98,14 @@ export class SelectionTool extends MoveTool {
     private selectGraphic = {
         start: [0,0],
         end: [0,0],
-        render: function (graphics: BoardGraphicHelper): void {
+        render: function (graphics: BoardGraphics): void {
             graphics.context.strokeRect(this.start[0], this.start[1], this.end[0] - this.start[0], this.end[1] - this.start[1])
         }
     }
-    private selectGraphicInstance: BoardGraphic|null = null;
+    private selectGraphicInstance: GraphicElement|null = null;
     private _rectSelectStart: [number, number]|null = null;
     private _selectionMade: boolean = false;
-    override onMouseDown(e: MouseEvent, on: SelectableBoardElement | null): void {
+    override onMouseDown(e: MouseEvent, on: SelectableElement | null): void {
         if(e.button != 0)
             return;
 
@@ -118,7 +119,7 @@ export class SelectionTool extends MoveTool {
         this._rectSelectStart = [e.clientX, e.clientY];
         this.selectGraphic.start = this._rectSelectStart;
         this.selectGraphic.end = this._rectSelectStart;
-        this.selectGraphicInstance = new BoardGraphic(this.board.graphicLayer, this.selectGraphic.start[0], this.selectGraphic.start[1], this.selectGraphic.render);
+        this.selectGraphicInstance = new GraphicElement(this.board.graphicLayer, this.selectGraphic.start[0], this.selectGraphic.start[1], this.selectGraphic.render);
         this.board.graphicLayer.addElement(this.selectGraphicInstance);
     }
     override onMouseMove(lastMousePos: [number, number], mousePos: [number, number]): void {
@@ -129,7 +130,7 @@ export class SelectionTool extends MoveTool {
         this.selectGraphic.end = mousePos;
         this.board.render();
     }
-    override onMouseUp(e: MouseEvent, on: SelectableBoardElement | null): void {
+    override onMouseUp(e: MouseEvent, on: SelectableElement | null): void {
         if(e.button != 0 || !this._rectSelectStart)
             return;
         
