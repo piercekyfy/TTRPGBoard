@@ -1,4 +1,7 @@
-abstract class Tool {
+import { SelectableBoardElement, Board, BoardGraphicHelper, BoardGraphic } from './board';
+import {Game} from './game';
+
+export abstract class Tool {
     public abstract title: string;
     protected _game: Game;
 
@@ -20,7 +23,7 @@ abstract class Tool {
     }
 }
 
-class MoveTool extends Tool {
+export class MoveTool extends Tool {
     public override title = "Move";
     protected _selected: SelectableBoardElement|null = null;
     protected _dragSelection: boolean = false;
@@ -90,7 +93,7 @@ class MoveTool extends Tool {
     public onWheel(e: WheelEvent): void {}
 }
 
-class SelectionTool extends MoveTool {
+export class SelectionTool extends MoveTool {
     private selectGraphic = {
         start: [0,0],
         end: [0,0],

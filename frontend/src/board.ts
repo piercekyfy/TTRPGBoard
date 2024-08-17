@@ -1,5 +1,5 @@
 // Something that visibly exists on a layer of the board.
-abstract class BoardElement {
+export abstract class BoardElement {
     public layer!: BoardLayer;
     protected _childGraphics: BoardGraphic[] = [];
     private _x!: number;
@@ -34,11 +34,11 @@ abstract class BoardElement {
         throw new Error("Graphic does not exist on element");
     }
     public removeGraphicByTag(tag: string) {
+        console.log("trying to remove: " + tag);
         const remove: BoardGraphic[] = [];
         for(let i = 0; i < this._childGraphics.length; i++) {
             if(this._childGraphics[i].tag == tag) {
                 remove.push(this._childGraphics[i]);
-                return;
             }
         }
         for(const graphic of remove) {
@@ -65,7 +65,7 @@ abstract class BoardElement {
 }
 
 // A board element which can be selected and interacted with by the user.
-abstract class SelectableBoardElement extends BoardElement {
+export abstract class SelectableBoardElement extends BoardElement {
     private _width!: number;
     private _height!: number;
     public constructor(layer: BoardLayer, x: number, y: number, width: number, height: number) {
@@ -93,7 +93,7 @@ abstract class SelectableBoardElement extends BoardElement {
     }
 }
 
-class BoardGraphic extends BoardElement {
+export class BoardGraphic extends BoardElement {
     public tag: string;
     public parent: BoardElement|null = null;
     private _renderer: (graphics: BoardGraphicHelper, caller?: BoardElement) => void;
@@ -126,7 +126,7 @@ class BoardGraphic extends BoardElement {
     }
 }
 
-class Token extends SelectableBoardElement {
+export class Token extends SelectableBoardElement {
     protected _boundaryCache: [number, number][]|null = null;
     private _imgSrc!: HTMLImageElement;
     public constructor(layer: BoardLayer, x: number, y: number, imgSrc: HTMLImageElement, width?: number, height?: number) {
@@ -178,7 +178,7 @@ class Token extends SelectableBoardElement {
     }
 }
 
-class BoardLayer {
+export class BoardLayer {
     public readonly board: Board;
     public readonly id: number;
     public elements: BoardElement[] = [];
@@ -223,7 +223,7 @@ class BoardLayer {
     }
 }
 
-class Board {
+export class Board {
     // _layers is **always** sorted.
     private _layers: BoardLayer[] = [new BoardLayer(this, 99)];
     private _graphicsLayer: BoardGraphic[] = [];
@@ -409,7 +409,7 @@ class Board {
     }
 }
 
-class BoardGraphicHelper {
+export class BoardGraphicHelper {
     public readonly board: Board;
     public readonly context: CanvasRenderingContext2D;
     public constructor(board: Board, ctx: CanvasRenderingContext2D) {
