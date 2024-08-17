@@ -5,11 +5,11 @@ abstract class Tool {
     public constructor(game: Game) {
         this._game = game;
     }
-    public abstract onMouseDown(e: MouseEvent, on: Selectable|null): void;
+    public abstract onMouseDown(e: MouseEvent, on: SelectableBoardElement|null): void;
     public abstract onMouseMove(lastMousePos: [number, number], mousePos: [number, number]): void;
-    public abstract onMouseUp(e: MouseEvent, on: Selectable|null): void;
+    public abstract onMouseUp(e: MouseEvent, on: SelectableBoardElement|null): void;
     public abstract onWheel(e: WheelEvent): void;
-    protected get selection(): Selectable[] {
+    protected get selection(): SelectableBoardElement[] {
         return this._game.selection;
     }
     protected get selected(): boolean {
@@ -22,10 +22,10 @@ abstract class Tool {
 
 class MoveTool extends Tool {
     public override title = "Move";
-    protected _selected: Selectable|null = null;
+    protected _selected: SelectableBoardElement|null = null;
     protected _dragSelection: boolean = false;
     protected _dragging: boolean = false;
-    public onMouseDown(e: MouseEvent, on: Selectable|null): void {
+    public onMouseDown(e: MouseEvent, on: SelectableBoardElement|null): void {
 
         if(e.button != 0)
             return;
@@ -59,7 +59,7 @@ class MoveTool extends Tool {
             this._selected.onDrag(lastMousePos, mousePos);
         }
     }
-    public onMouseUp(e: MouseEvent, on: Selectable|null): void {
+    public onMouseUp(e: MouseEvent, on: SelectableBoardElement|null): void {
         if(e.button != 0 || this._selected == null)
             return;
 
@@ -91,16 +91,17 @@ class MoveTool extends Tool {
 }
 
 class SelectionTool extends MoveTool {
-    private selectGraphic: BoardGraphic & {start: [number, number], end: [number, number]} = {
+    private selectGraphic = {
         start: [0,0],
         end: [0,0],
         render: function (graphics: BoardGraphicHelper): void {
             graphics.context.strokeRect(this.start[0], this.start[1], this.end[0] - this.start[0], this.end[1] - this.start[1])
         }
     }
+    private selectGraphicInstance: BoardGraphic|null = null;
     private _rectSelectStart: [number, number]|null = null;
     private _selectionMade: boolean = false;
-    override onMouseDown(e: MouseEvent, on: Selectable | null): void {
+    override onMouseDown(e: MouseEvent, on: SelectableBoardElement | null): void {
         if(e.button != 0)
             return;
 
@@ -114,7 +115,8 @@ class SelectionTool extends MoveTool {
         this._rectSelectStart = [e.clientX, e.clientY];
         this.selectGraphic.start = this._rectSelectStart;
         this.selectGraphic.end = this._rectSelectStart;
-        this.board.graphicLayer.addGraphic(this.selectGraphic);
+        this.selectGraphicInstance = new BoardGraphic(this.board.graphicLayer, this.selectGraphic.start[0], this.selectGraphic.start[1], this.selectGraphic.render);
+        this.board.graphicLayer.addElement(this.selectGraphicInstance);
     }
     override onMouseMove(lastMousePos: [number, number], mousePos: [number, number]): void {
         super.onMouseMove(lastMousePos, mousePos);
@@ -124,11 +126,11 @@ class SelectionTool extends MoveTool {
         this.selectGraphic.end = mousePos;
         this.board.render();
     }
-    override onMouseUp(e: MouseEvent, on: Selectable | null): void {
+    override onMouseUp(e: MouseEvent, on: SelectableBoardElement | null): void {
         if(e.button != 0 || !this._rectSelectStart)
             return;
-
-        this.board.graphicLayer.removeGraphic(this.selectGraphic);
+        
+        this.selectGraphicInstance?.destroy();
         const elms = this.board.elementsInRect(this._rectSelectStart[0], this._rectSelectStart[1], e.clientX - this._rectSelectStart[0], e.clientY - this._rectSelectStart[1]);
         for(const elm of elms) {
             this._game.select(elm);
