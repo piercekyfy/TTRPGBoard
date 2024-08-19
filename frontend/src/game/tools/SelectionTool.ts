@@ -24,6 +24,7 @@ export default class SelectionTool extends MoveTool {
             return;
         } else {
             this._game.clearSelection();
+            this._selectionMade = false;
         }
             
         this._rectSelectStart = [e.clientX, e.clientY];
@@ -41,6 +42,7 @@ export default class SelectionTool extends MoveTool {
         this.selectGraphic.end = [e.clientX, e.clientY];
     }
     override onMouseUp(e: MouseEvent, on: SelectableElement | null): void {
+        super.onMouseUp(e, on);
         if(e.button != 0 || !this._rectSelectStart)
             return;
         
@@ -49,5 +51,6 @@ export default class SelectionTool extends MoveTool {
         for(const elm of elms) {
             this._game.select(elm);
         }
+        this._selectionMade = true;
     }
 }
