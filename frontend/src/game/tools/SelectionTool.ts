@@ -4,11 +4,12 @@ import { SelectableElement, GraphicElement } from "../../board/elements";
 
 
 export default class SelectionTool extends MoveTool {
+    override title: string = "Selection";
     private selectGraphic = {
         start: [0,0],
         end: [0,0],
-        render: function (graphics: BoardGraphics): void {
-            graphics.context.strokeRect(this.start[0], this.start[1], this.end[0] - this.start[0], this.end[1] - this.start[1])
+        render: (graphics: BoardGraphics): void => {
+            graphics.context.strokeRect(this.selectGraphic.start[0], this.selectGraphic.start[1], this.selectGraphic.end[0] - this.selectGraphic.start[0], this.selectGraphic.end[1] - this.selectGraphic.start[1])
         }
     }
     private selectGraphicInstance: GraphicElement|null = null;
@@ -28,6 +29,7 @@ export default class SelectionTool extends MoveTool {
         this._rectSelectStart = [e.clientX, e.clientY];
         this.selectGraphic.start = this._rectSelectStart;
         this.selectGraphic.end = this._rectSelectStart;
+
         this.selectGraphicInstance = new GraphicElement(this.board.graphicLayer, this.selectGraphic.start[0], this.selectGraphic.start[1], this.selectGraphic.render);
         this.board.graphicLayer.addElement(this.selectGraphicInstance);
     }

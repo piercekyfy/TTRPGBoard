@@ -3,7 +3,6 @@ import { BoardLayer, BoardGraphics } from "../";
 
 export default class DrawingElement extends SelectableElement {
     protected _boundaryCache: [number, number][]|null = null;
-    private _imgSrc!: HTMLImageElement;
     private path: [number, number][] = [];
     public constructor(layer: BoardLayer, x: number, y: number) {
         super(layer, x, y, 1, 1);
@@ -26,6 +25,10 @@ export default class DrawingElement extends SelectableElement {
     }
     public addToPath(point: [number, number]) {
         this.path.push(point);
+        const xs = this.path.map(point => point[0]);
+        const ys = this.path.map(point => point[1]);
+        this._width = Math.max(...xs) - Math.min(...xs);
+        this._height = Math.max(...ys) - Math.min(...ys);
         this.onUpdate();
     }
     public onSelected(): boolean {

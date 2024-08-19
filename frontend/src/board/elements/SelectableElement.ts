@@ -2,8 +2,8 @@ import BoardElement from "./BoardElement";
 import { BoardLayer } from "../";
 
 export default abstract class SelectableElement extends BoardElement {
-    private _width!: number;
-    private _height!: number;
+    protected _width!: number;
+    protected _height!: number;
     public constructor(layer: BoardLayer, x: number, y: number, width: number, height: number) {
         super(layer, x, y);
         this._width = width;
