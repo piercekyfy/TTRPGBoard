@@ -27,7 +27,7 @@ document.addEventListener("wheel",     (e: WheelEvent) => { if(e.target instance
 
 
 function createToolButton(tool: Tool) {
-    const template: string = "<div class='tool-icon'><div class='tooltip'>%title%</div><img src='./edwin.png'></img></div>"
+    const template: string = "<div class='tool-icon'><div class='tooltip'>%title%</div><img src='./images/edwin.png'></img></div>"
     const parent = document.querySelector('#tool-selector');
     const elm = document.createElement('div');
     elm.className = 'tool-icon';

@@ -2,7 +2,6 @@ import MoveTool from "./MoveTool";
 import { BoardGraphics } from "../../board";
 import { SelectableElement, GraphicElement } from "../../board/elements";
 
-
 export default class SelectionTool extends MoveTool {
     override title: string = "Selection";
     private selectGraphic = {
