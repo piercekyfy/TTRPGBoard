@@ -6,15 +6,21 @@ const canvas: HTMLCanvasElement = document.getElementById('game') as HTMLCanvasE
 
 const board: Board = new Board(canvas, document.documentElement.clientWidth, document.documentElement.clientHeight);
 
-board.render();
-
 let token = board.createToken(1, 64,64, imgEdwin, 64, 64);
 let token2 = board.createToken(2, 128,64, imgEdwin, 128, 128);
 let token3 = board.createToken(1, 32,64, imgEdwin, 64, 64);
 
 const game = new Game(board);
 
+function animFrame() {
+    game.onAnimFrame();
+    window.requestAnimationFrame(animFrame);
+}
+
+window.requestAnimationFrame(animFrame);
+document.addEventListener("keyup", (e: KeyboardEvent) => { game.onKeyUp(e) });
 document.addEventListener("mousedown", (e: MouseEvent) => { game.onMouseDown(e) });
 document.addEventListener("mousemove", (e: MouseEvent) => { game.onMouseMove(e) });
 document.addEventListener("mouseup",   (e: MouseEvent) => { game.onMouseUp(e)   });
 document.addEventListener("wheel",     (e: WheelEvent) => { game.onWheel(e)   });
+

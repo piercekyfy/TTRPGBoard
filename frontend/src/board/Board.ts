@@ -116,7 +116,7 @@ export default class Board {
         return element;
     }
     public onElementModified(layerId: number, element: BoardElement) {
-        this.render();
+        
     }
     private get elements(): BoardElement[] {
         const elements: BoardElement[] = [];
@@ -148,14 +148,12 @@ export default class Board {
     }
     public set xOffset(xOffset: number) {
         this._xOffset = xOffset;
-        this.render();
     }
     public get yOffset(): number {
         return this._yOffset;
     }
     public set yOffset(yOffset:number) {
         this._yOffset = yOffset;
-        this.render();
     }
     public get xyOffset(): [number, number] {
         return [this.xOffset, this.yOffset]
@@ -163,7 +161,6 @@ export default class Board {
     public set xyOffset(xyOffset: [number, number]) {
         this._xOffset = xyOffset[0];
         this._yOffset = xyOffset[1];
-        this.render();
     }
     public get scale(): number {
         return this._scale;
@@ -172,7 +169,6 @@ export default class Board {
         if(scale <= 0)
             throw new Error("'scale' must be greater than 0.");
         this._scale = scale;
-        this.render();
     }
     public get cellSize(): number {
         return this._cellSize;
@@ -181,7 +177,6 @@ export default class Board {
         if(cellSize < 0)
             cellSize = 0;
         this._cellSize = cellSize;
-        this.render();
     }
     public get graphicLayer(): BoardLayer {
         return this.getLayer(99) as BoardLayer;

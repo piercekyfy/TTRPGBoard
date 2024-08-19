@@ -101,6 +101,9 @@ export default class BoardGraphics {
         element.render(this);
     }
     public getPath(points: [number, number][]): Path2D {
+        if(points.length == 0)
+            return new Path2D();
+
         let path = new Path2D();
         path.moveTo(this.board.toVirtualX(points[0][0]), this.board.toVirtualY(points[0][1]));
         for(let i = 1; i < points.length; i++) {

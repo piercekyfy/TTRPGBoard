@@ -18,7 +18,6 @@ export default class BoardLayer {
             if(this.elements[i] === element) {
                 this.elements[i] = this.elements[this.elements.length - 1];
                 this.elements[this.elements.length - 1] = element;
-                this.board.render();
                 return;
             }
         }
@@ -27,13 +26,11 @@ export default class BoardLayer {
     }
     public addElement(element: BoardElement) {
         this.elements.push(element);
-        this.board.render();
     }
     public removeElement(element: BoardElement) {
         for(let i = 0; i < this.elements.length; i++) {
             if(this.elements[i] === element) {
                 this.elements.splice(i, 1);
-                this.board.render();
                 return;
             }
         }

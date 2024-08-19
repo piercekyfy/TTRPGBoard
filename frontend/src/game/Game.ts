@@ -1,9 +1,9 @@
-import { Board, BoardGraphics } from './board/';
-import { SelectableElement, BoardElement, GraphicElement } from './board/elements';
-import { Tool, MoveTool } from './gametools';
+import { Board, BoardGraphics } from '../board';
+import { SelectableElement, BoardElement, GraphicElement } from '../board/elements';
+import { Tool, MoveTool, DrawTool } from './tools';
 
-export class Game {
-    public currentTool: Tool = new MoveTool(this);
+export default class Game {
+    public currentTool: Tool = new DrawTool(this);
     public snapToGrid: boolean = true;
     private _board: Board;
     private _selection: SelectableElement[] = [];
@@ -32,14 +32,12 @@ export class Game {
             this._selection.push(selectable);
             GraphicElement.attachTo(selectable, this._outlinesGraphic.render, this._outlinesGraphic.tag);
         }
-        this.board.render();
     }
     public deselect(selectable: SelectableElement) {
         for(let i = 0; i < this._selection.length; i++) {
             if(selectable === this._selection[i] && this._selection[i].onDeselected()) {
                 this._selection[i].removeGraphicByTag(this._outlinesGraphic.tag);
                 this._selection.splice(i, 1);
-                this.board.render();
                 return;
             }
         }
@@ -50,11 +48,16 @@ export class Game {
         for(const selectable of selection) {
             this.deselect(selectable); 
         }
-        console.log("cleared selection");
     }
     private onScrollDrag(mousePos: [number, number]) {
         this._board.xOffset += (mousePos[0] - this._lastMousePos[0]) / this._board.scale;
         this._board.yOffset += (mousePos[1] - this._lastMousePos[1]) / this._board.scale;
+    }
+    public onAnimFrame() {
+        this.board.render();
+    }
+    public onKeyUp(e: KeyboardEvent) {
+        this.currentTool.onKeyUp(e);
     }
     public onMouseDown(e: MouseEvent) {
         const elm = this._board.getTopElementAt(e.clientX, e.clientY);
@@ -72,7 +75,7 @@ export class Game {
             if(this._performScrollDrag) {
                 this.onScrollDrag(mousePos);
             } else {
-                this.currentTool.onMouseMove(this._lastMousePos, mousePos);
+                this.currentTool.onMouseMove(e, this._lastMousePos);
             }
         }   
 

@@ -36,7 +36,6 @@ export default abstract class BoardElement {
         throw new Error("Graphic does not exist on element");
     }
     public removeGraphicByTag(tag: string) {
-        console.log("trying to remove: " + tag);
         const remove: GraphicElement[] = [];
         for(let i = 0; i < this._childGraphics.length; i++) {
             if(this._childGraphics[i].tag == tag) {
