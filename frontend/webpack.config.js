@@ -52,6 +52,7 @@ module.exports =  {
         },
         compress: true,
         port: 80,
+        allowedHosts: 'all'
     },
     devtool: 'source-map'
 }

@@ -6,7 +6,7 @@ COPY . .
 
 # --target=dev
 FROM base as dev
-EXPOSE 80
+EXPOSE 3000
 CMD ["npm", "run", "dev"]
 
 FROM base as build
