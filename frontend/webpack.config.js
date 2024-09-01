@@ -1,5 +1,6 @@
 // @ts-check
 
+const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const path = require('path');
 
@@ -7,7 +8,7 @@ module.exports =  {
     entry: './src/index.ts',
     output: {
         filename: 'bundle.js',
-        path: path.resolve(__dirname, './public/dist'),
+        path: path.resolve(__dirname, './dist'),
         clean: true
     },
     resolve: {
@@ -21,14 +22,25 @@ module.exports =  {
                 exclude: /node_modules/
             },
             {
-                test: /\.css$/,
-                use: ['style-loader', 'css-loader'],
-            }
+                test: /\.css$/i,
+                use: [MiniCssExtractPlugin.loader, "css-loader"],
+
+            },
+            {
+                test: /\.(png|svg|jpg|jpeg|gif)$/i,
+                type: 'asset/resource',
+                generator: {
+                    filename: 'images/[name][ext]',
+                }
+            },
         ]
     },
     plugins: [
+        new MiniCssExtractPlugin({
+            filename: 'styles/[name].css',
+        }),
         new HtmlWebpackPlugin({
-            template: './public/index.html', // Your source HTML file
+            template: './src/index.html',
         }),
     ],
     devServer: {
@@ -39,7 +51,7 @@ module.exports =  {
             overlay: true
         },
         compress: true,
-        port: 3000,
+        port: 80,
     },
     devtool: 'source-map'
 }

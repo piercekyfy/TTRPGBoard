@@ -1,5 +1,5 @@
 import BoardElement from "./BoardElement";
-import { BoardLayer } from "../";
+import { BoardLayer } from "..";
 
 export default abstract class SelectableElement extends BoardElement {
     protected _width!: number;

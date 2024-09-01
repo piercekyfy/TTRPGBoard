@@ -1,5 +1,5 @@
 import BoardElement from "./BoardElement";
-import { BoardLayer, BoardGraphics } from "../";
+import { BoardLayer, BoardGraphics } from "..";
 
 export default class GraphicElement extends BoardElement {
     public tag: string;

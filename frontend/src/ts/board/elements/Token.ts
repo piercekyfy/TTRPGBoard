@@ -1,5 +1,5 @@
 import SelectableElement from "./SelectableElement";
-import { BoardLayer, BoardGraphics } from "../";
+import { BoardLayer, BoardGraphics } from "..";
 
 export default class Token extends SelectableElement {
     protected _boundaryCache: [number, number][]|null = null;

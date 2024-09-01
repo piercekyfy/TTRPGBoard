@@ -1,4 +1,4 @@
-import { Game } from '../';
+import { Game } from '..';
 import { Board } from '../../board';
 import { SelectableElement } from '../../board/elements';
 

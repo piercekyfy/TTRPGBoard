@@ -1,6 +1,8 @@
-import {Board} from './board';
-import {Game} from './game';
-import { Tool, MoveTool, SelectionTool, DrawTool } from './game/tools';
+import './css/index.css';
+
+import {Board} from './ts/board';
+import {Game} from './ts/game';
+import { Tool, MoveTool, SelectionTool, DrawTool } from './ts/game/tools';
 
 const imgEdwin: HTMLImageElement = document.getElementById('img-edwin') as HTMLImageElement;
 const canvas: HTMLCanvasElement = document.getElementById('game') as HTMLCanvasElement;

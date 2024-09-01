@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: DockerFile
+      target: prod
+  backend:
+    build:
+      context: ./backend
+      dockerfile: DockerFile
+      target: prod

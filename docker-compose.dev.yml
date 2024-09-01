@@ -1,0 +1,23 @@
+services:
+  frontend:
+    build:
+      context: ./frontend/
+      target: dev
+    ports:
+      - 80:80
+    volumes:
+      - ./frontend:/app
+    command: npm run dev
+    environment:
+      - WATCHPACK_POLLING=true
+  backend:
+    build:
+      context: ./backend/
+      target: dev
+    ports:
+      - 5000:5000
+    volumes:
+      - ./backend:/app
+    command: npm run dev
+    environment:
+      - WATCHPACK_POLLING=true

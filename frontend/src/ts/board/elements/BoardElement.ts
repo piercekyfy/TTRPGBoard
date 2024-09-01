@@ -1,5 +1,5 @@
 import GraphicElement from "./GraphicElement";
-import { BoardLayer, BoardGraphics } from "../";
+import { BoardLayer, BoardGraphics } from "..";
 
 export default abstract class BoardElement {
     public layer!: BoardLayer;
