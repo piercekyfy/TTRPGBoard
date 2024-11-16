@@ -1,9 +1,11 @@
 import MoveTool from "./MoveTool";
 import { BoardGraphics } from "../../board";
 import { SelectableElement, GraphicElement } from "../../board/elements";
+import DottedLineImage from '../../../images/dotted-line.png';
 
 export default class SelectionTool extends MoveTool {
-    override title: string = "Selection";
+    public override title: string = "Selection";
+    public override imageURL: string = DottedLineImage;
     private selectGraphic = {
         start: [0,0],
         end: [0,0],
@@ -46,7 +48,13 @@ export default class SelectionTool extends MoveTool {
             return;
         
         this.selectGraphicInstance?.destroy();
-        const elms = this.board.elementsInRect(this._rectSelectStart[0], this._rectSelectStart[1], e.clientX - this._rectSelectStart[0], e.clientY - this._rectSelectStart[1]);
+
+        let elms: SelectableElement[] = [];
+        if(e.clientX > this._rectSelectStart[0])
+            elms = this.board.elementsInRect(this._rectSelectStart[0], this._rectSelectStart[1], e.clientX - this._rectSelectStart[0], e.clientY - this._rectSelectStart[1]);
+        else
+            elms = this.board.elementsInRect(e.clientX, e.clientY, e.clientX + this._rectSelectStart[0],  e.clientY + this._rectSelectStart[1]);
+
         for(const elm of elms) {
             this._game.select(elm);
         }

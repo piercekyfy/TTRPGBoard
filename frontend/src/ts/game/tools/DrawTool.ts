@@ -1,5 +1,6 @@
 import { SelectableElement, DrawingElement } from '../../board/elements';
 import Tool from './Tool';
+import CursorImage from '../../../images/palm.png';
 
 export enum DrawMode {
     Paint = 0
@@ -11,7 +12,8 @@ export class DrawEvent {
 }
 
 export default class DrawTool extends Tool {
-    public title: string = "Draw";
+    public override title: string = "Draw";
+    public override imageURL: string = CursorImage;
     public mode: DrawMode = DrawMode.Paint;
     private initialBegin = false;
     private drawing = false;

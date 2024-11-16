@@ -1,8 +1,10 @@
 import Tool from './Tool';
 import { SelectableElement } from '../../board/elements';
+import PalmImage from '../../../images/palm.png';
 
 export default class MoveTool extends Tool {
     public override title = "Move";
+    public override imageURL = PalmImage; 
     protected _selected: SelectableElement|null = null;
     protected _dragSelection: boolean = false;
     protected _dragging: boolean = false;

@@ -4,6 +4,7 @@ import { SelectableElement } from '../../board/elements';
 
 export default abstract class Tool {
     public abstract title: string;
+    public abstract imageURL: string;
     protected _game: Game;
 
     public constructor(game: Game) {

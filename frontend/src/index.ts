@@ -3,6 +3,7 @@ import './css/index.css';
 import {Board} from './ts/board';
 import {Game} from './ts/game';
 import { Tool, MoveTool, SelectionTool, DrawTool } from './ts/game/tools';
+import { ToolList } from './ts/components';
 
 const imgEdwin: HTMLImageElement = document.getElementById('img-edwin') as HTMLImageElement;
 const canvas: HTMLCanvasElement = document.getElementById('game') as HTMLCanvasElement;
@@ -22,25 +23,10 @@ function animFrame() {
 
 window.requestAnimationFrame(animFrame);
 document.addEventListener("keyup", (e: KeyboardEvent) => { game.onKeyUp(e) });
-document.addEventListener("mousedown", (e: MouseEvent) => { if(e.target instanceof HTMLCanvasElement ) game.onMouseDown(e) });
-document.addEventListener("mousemove", (e: MouseEvent) => { if(e.target instanceof HTMLCanvasElement ) game.onMouseMove(e) });
-document.addEventListener("mouseup",   (e: MouseEvent) => { if(e.target instanceof HTMLCanvasElement ) game.onMouseUp(e)   });
-document.addEventListener("wheel",     (e: WheelEvent) => { if(e.target instanceof HTMLCanvasElement ) game.onWheel(e)   });
+document.addEventListener("mousedown", (e: MouseEvent) => { if(e.target instanceof HTMLCanvasElement) game.onMouseDown(e) });
+document.addEventListener("mousemove", (e: MouseEvent) => { game.onMouseMove(e) });
+document.addEventListener("mouseup",   (e: MouseEvent) => { game.onMouseUp(e)   });
+document.addEventListener("wheel",     (e: WheelEvent) => {  game.onWheel(e)   });
 
-
-function createToolButton(tool: Tool) {
-    const template: string = "<div class='tool-icon'><div class='tooltip'>%title%</div><img src='./images/edwin.png'></img></div>"
-    const parent = document.querySelector('#tool-selector');
-    const elm = document.createElement('div');
-    elm.className = 'tool-icon';
-    elm.innerHTML = template.replace('%title%', tool.title);
-    parent?.appendChild(elm);
-    const _tool = tool;
-    elm.addEventListener('click', () => {
-        game.currentTool = _tool;
-    });
-}
-
-createToolButton(new MoveTool(game));
-createToolButton(new SelectionTool(game));
-createToolButton(new DrawTool(game));
+const toolList: ToolList = new ToolList([new MoveTool(game), new SelectionTool(game), new DrawTool(game)], game); // Perhaps replace with a factory that creates a new Tool when the Game needs it. So that Game can give itself as a dependency.
+document.querySelector('#tools-body')?.replaceWith(toolList.render());

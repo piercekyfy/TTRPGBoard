@@ -3,7 +3,7 @@ import { SelectableElement, BoardElement, GraphicElement } from '../board/elemen
 import { Tool, MoveTool, DrawTool } from './tools';
 
 export default class Game {
-    public currentTool: Tool = new DrawTool(this);
+    public selectedTool: Tool = new MoveTool(this);
     public snapToGrid: boolean = true;
     private _board: Board;
     private _selection: SelectableElement[] = [];
@@ -24,6 +24,9 @@ export default class Game {
 
     public constructor(board: Board) {
         this._board = board;
+    }
+    public selectTool(tool: Tool) {
+        this.selectedTool = tool;
     }
     public select(selectable: SelectableElement|null) {
         if(selectable === null)
@@ -57,7 +60,7 @@ export default class Game {
         this.board.render();
     }
     public onKeyUp(e: KeyboardEvent) {
-        this.currentTool.onKeyUp(e);
+        this.selectedTool.onKeyUp(e);
     }
     public onMouseDown(e: MouseEvent) {
         const elm = this._board.getTopElementAt(e.clientX, e.clientY);
@@ -66,16 +69,16 @@ export default class Game {
             this._performScrollDrag = true;
         }
 
-        this.currentTool.onMouseDown(e, elm);
+        this.selectedTool.onMouseDown(e, elm);
     }
     public onMouseMove(e: MouseEvent) {
         const mousePos: [number, number] = [e.clientX, e.clientY];
-
+        
         if(mousePos != this._lastMousePos) {
             if(this._performScrollDrag) {
                 this.onScrollDrag(mousePos);
             } else {
-                this.currentTool.onMouseMove(e, this._lastMousePos);
+                this.selectedTool.onMouseMove(e, this._lastMousePos);
             }
         }   
 
@@ -88,7 +91,7 @@ export default class Game {
             this._performScrollDrag = false;
         }
 
-        this.currentTool.onMouseUp(e, elm);
+        this.selectedTool.onMouseUp(e, elm);
     }
     public onWheel(e: WheelEvent) {
         const dir = -Math.sign(e.deltaY);
@@ -102,7 +105,7 @@ export default class Game {
 
         this._board.scale += speed * dir;
 
-        this.currentTool.onWheel(e);
+        this.selectedTool.onWheel(e);
     }
     public get board(): Board {
         return this._board;

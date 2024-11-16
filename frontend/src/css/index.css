@@ -15,52 +15,45 @@ html, body {
     margin: 0px;
 }
 
-
-#widgets {
-    width: 100%;
-    height: 100%;
-    z-index: 999;
-}
-
-#tool-selector {
-    position: absolute;
-    top: 0.5%;
-    right: 0.5%;
-    width: 2.5%;
-    height: auto;
-    background-color: darkslategrey;
-    border-radius: 10px;
-    z-index: inherit;
-    min-width: 50px;
-
+.tools-body {
+    background-color: #171a21;
+    z-index: 99;
+    height: 4%;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    gap: 10px;
+
+    border-radius: 10px;
+    padding: 0.1% 10px 0.1% 10px;
+
+    position: absolute;
+    left: 50%;
+    bottom: 1%;
+    transform: translate(-50%, 0px);
 }
 
 .tooltip {
-    position: absolute;
-    right: 100%;
-    z-index: inherit;
-    color: black;
-    background-color: white;
-    border: 1px solid black;
-    height: auto;
-    padding: 0px;
-    margin: 0px;
     display: none;
-    width: auto;
-    height: 2vh;
 }
 
-.tool-icon {
-    width: 100%;
-}
-
-.tool-icon:hover > .tooltip {
-    display: block;
-}
-
-.tool-icon > img {
-    width: 100%;
+#tools-body > .tool {
     height: 100%;
+
+    border-radius: 10px;
 }
+
+.tool img {
+    height: 100%;
+    pointer-events: none;
+    user-select: none;
+}
+
+.tool:hover {
+    transform: scale(1.1);
+    background-color: rgba(155,155,155,0.3);
+}
+
+.tool.selected {
+    border-color: red;
+}
+
