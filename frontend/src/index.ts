@@ -4,6 +4,7 @@ import {Board} from './ts/board';
 import {Game} from './ts/game';
 import { Tool, MoveTool, SelectionTool, DrawTool } from './ts/game/tools';
 import { ToolList } from './ts/components';
+import ElementWidget from './ts/components/ElementWidget';
 
 const imgEdwin: HTMLImageElement = document.getElementById('img-edwin') as HTMLImageElement;
 const canvas: HTMLCanvasElement = document.getElementById('game') as HTMLCanvasElement;
@@ -30,3 +31,6 @@ document.addEventListener("wheel",     (e: WheelEvent) => {  game.onWheel(e)   }
 
 const toolList: ToolList = new ToolList([new MoveTool(game), new SelectionTool(game), new DrawTool(game)], game); // Perhaps replace with a factory that creates a new Tool when the Game needs it. So that Game can give itself as a dependency.
 document.querySelector('#tools-body')?.replaceWith(toolList.render());
+
+const elmWidget: ElementWidget = new ElementWidget(token2);
+document.body.appendChild(elmWidget.render());

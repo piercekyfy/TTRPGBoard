@@ -105,12 +105,12 @@ export default class Board {
     public sortLayers() {
         this._layers.sort((a, b) => {return a.id - b.id})
     }
-    public createToken(layerId: number, x: number, y: number, imgSrc: HTMLImageElement, width?: number, height?: number): BoardElement {
+    public createToken(layerId: number, x: number, y: number, imgSrc: HTMLImageElement, width?: number, height?: number): Token {
         let layer: BoardLayer|null = this.getLayer(layerId);
         if(layer == null)
             layer = this.createLayer(layerId);
 
-        const element: BoardElement = new Token(layer, x, y, imgSrc, width, height);
+        const element: Token = new Token(layer, x, y, imgSrc, width, height);
         layer.addElement(element);
 
         return element;

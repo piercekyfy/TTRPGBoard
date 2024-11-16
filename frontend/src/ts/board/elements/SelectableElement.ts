@@ -8,6 +8,7 @@ export default abstract class SelectableElement extends BoardElement {
         super(layer, x, y);
         this._width = width;
         this._height = height;
+        console.log(this);
     }
     public abstract getBoundaryPath(): [number, number][];
     public abstract onSelected(): boolean;
