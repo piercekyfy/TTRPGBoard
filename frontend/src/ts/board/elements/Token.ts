@@ -9,7 +9,6 @@ export default class Token extends BoardElement {
         this.imageSource = imgSource;
     }
     protected override render(graphics: BoardGraphics): void {
-        console.log(graphics);
         graphics.drawToken(this);
     }
     public getBoundaryPath(): [number, number][] { 
