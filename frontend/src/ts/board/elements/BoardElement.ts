@@ -48,4 +48,16 @@ export default abstract class BoardElement {
     public get graphics(): ((graphics: BoardGraphics, caller?: BoardElement) => void)[] {
         return [this.render.bind(this), ...this.childGraphics.map(g => g.render)];
     }
+    public get virtualX(): number {
+        return this.layer.board.toVirtualX(this.x);
+    }
+    public get virtualY(): number {
+        return this.layer.board.toVirtualY(this.y);
+    }
+    public get virtualWidth(): number {
+        return this.width * this.layer.board.scale;
+    }
+    public get virtualHeight(): number {
+        return this.height * this.layer.board.scale;
+    }
 }

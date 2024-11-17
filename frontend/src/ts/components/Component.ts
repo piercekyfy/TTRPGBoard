@@ -36,6 +36,10 @@ export abstract class Component<T extends Object> {
         let filled = template;
 
         for(const [key, value] of Object.entries(map) ) {
+            if(value instanceof Component) {
+                const elm = value.render();
+
+            }
             filled = filled.replace(delimiter + key + delimiter, value);
         }
 
