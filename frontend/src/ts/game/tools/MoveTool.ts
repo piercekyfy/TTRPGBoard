@@ -1,14 +1,14 @@
 import Tool from './Tool';
-import { SelectableElement } from '../../board/elements';
+import { BoardElement } from '../../board/elements';
 import PalmImage from '../../../images/palm.png';
 
 export default class MoveTool extends Tool {
     public override title = "Move";
     public override imageURL = PalmImage; 
-    protected _selected: SelectableElement|null = null;
+    protected _selected: BoardElement|null = null;
     protected _dragSelection: boolean = false;
     protected _dragging: boolean = false;
-    public onMouseDown(e: MouseEvent, on: SelectableElement|null): void {
+    public onMouseDown(e: MouseEvent, on: BoardElement|null): void {
 
         if(e.button != 0)
             return;
@@ -42,7 +42,7 @@ export default class MoveTool extends Tool {
             this._selected.onDrag(lastMousePos, [e.clientX, e.clientY]);
         }
     }
-    public onMouseUp(e: MouseEvent, on: SelectableElement|null): void {
+    public onMouseUp(e: MouseEvent, on: BoardElement|null): void {
         if(e.button != 0 || this._selected == null)
             return;
 

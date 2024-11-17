@@ -1,66 +1,51 @@
-import GraphicElement from "./GraphicElement";
-import { BoardLayer, BoardGraphics } from "..";
+import BoardGraphics from "../BoardGraphics";
+import BoardLayer from "../BoardLayer";
+import { BoardGraphic } from "../BoardGraphic";
 
 export default abstract class BoardElement {
-    public layer!: BoardLayer;
-    protected _childGraphics: GraphicElement[] = [];
-    private _x!: number;
-    private _y!: number;
-    public constructor(layer: BoardLayer, x: number, y: number) {
+    public layer: BoardLayer;
+    public x: number;
+    public y: number;
+    public width: number;
+    public height: number;
+    constructor(layer: BoardLayer, x: number, y: number, width: number, height: number) {
         this.layer = layer;
-        this._x = x;
-        this._y = y;
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
     }
-    public render(graphics: BoardGraphics): void
-    {
-        for(const graphic of this._childGraphics) {
-            graphic.render(graphics);
-        }
-    }; 
-    public onUpdate() {
-        if(this.layer)
-            this.layer.onElementModified(this);
+    protected childGraphics: BoardGraphic[] = [];
+    protected abstract render(graphics: BoardGraphics): void;
+    public attachGraphic(graphic: BoardGraphic) {
+        this.childGraphics.push(graphic);
     }
-    public attachGraphic(graphic: GraphicElement) {
-        if(this._childGraphics.includes(graphic))
-            throw new Error("Graphic already exists on element.");
-        this._childGraphics.push(graphic);
-    }
-    public removeGraphic(graphic: GraphicElement) {
-        for(let i = 0; i < this._childGraphics.length; i++) {
-            if(this._childGraphics[i] === graphic) {
-                this._childGraphics.splice(i, 1);
-                return;
-            }
-        }
-        throw new Error("Graphic does not exist on element");
+    public removeGraphic(graphic: BoardGraphic) {
+        this.childGraphics = this.childGraphics.filter(g => g != graphic);
     }
     public removeGraphicByTag(tag: string) {
-        const remove: GraphicElement[] = [];
-        for(let i = 0; i < this._childGraphics.length; i++) {
-            if(this._childGraphics[i].tag == tag) {
-                remove.push(this._childGraphics[i]);
-            }
-        }
-        for(const graphic of remove) {
-            this.removeGraphic(graphic);
-        }
+        this.childGraphics = this.childGraphics.filter(g => g.tag != tag);
     }
-    public get layerId(): number {
-        return this.layer ? this.layer.id : -1;
+    abstract getBoundaryPath(): [number, number][];
+    public get selectable(): boolean {
+        return false;
     }
-    public get x(): number {
-        return this._x;
+    public onSelected() {
+        if(!this.selectable)
+            return;
+        this.layer.moveElementToTop(this);
     }
-    public set x(x: number) {
-        this._x = x;
-        this.onUpdate();
+    public onDeselected() { 
+        if(!this.selectable)
+            return;
     }
-    public get y(): number {
-        return this._y;
+    public onDrag(lastMousePos: [number, number], mousePos: [number, number]): void {
+        if(!this.selectable)
+            return;
+        this.x += (mousePos[0] - lastMousePos[0]) / this.layer.board.scale;
+        this.y += (mousePos[1] - lastMousePos[1]) / this.layer.board.scale;
     }
-    public set y(y: number) {
-        this._y = y;
-        this.onUpdate();
+    public get graphics(): ((graphics: BoardGraphics, caller?: BoardElement) => void)[] {
+        return [this.render.bind(this), ...this.childGraphics.map(g => g.render)];
     }
 }

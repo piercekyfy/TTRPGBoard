@@ -1,12 +1,12 @@
 import { Board, BoardGraphics } from '../board';
-import { SelectableElement, BoardElement, GraphicElement } from '../board/elements';
+import { BoardElement } from '../board/elements';
 import { Tool, MoveTool, DrawTool } from './tools';
 
 export default class Game {
     public selectedTool: Tool = new MoveTool(this);
     public snapToGrid: boolean = true;
     private _board: Board;
-    private _selection: SelectableElement[] = [];
+    private _selection: BoardElement[] = [];
     private _lastMousePos: [number, number] = [0,0];
     private _performScrollDrag: boolean = false;
     private _outlinesGraphic = {
@@ -16,7 +16,7 @@ export default class Game {
                 return;
             graphics.context.strokeStyle = "red";
             graphics.context.lineWidth = 2;
-            graphics.drawDebugBorderOn(caller as SelectableElement);
+            graphics.drawDebugBorderOn(caller as BoardElement);
             graphics.context.strokeStyle = "black";
             graphics.context.lineWidth = 1;
         }
@@ -28,18 +28,20 @@ export default class Game {
     public selectTool(tool: Tool) {
         this.selectedTool = tool;
     }
-    public select(selectable: SelectableElement|null) {
+    public select(selectable: BoardElement|null) {
         if(selectable === null)
             this.clearSelection();
-        else if (!this._selection.includes(selectable) && selectable.onSelected()) {
+        else if (!this._selection.includes(selectable) && selectable.selectable) {
+            selectable.onSelected();
             this._selection.push(selectable);
-            GraphicElement.attachTo(selectable, this._outlinesGraphic.render, this._outlinesGraphic.tag);
+            selectable.attachGraphic(this._outlinesGraphic)
         }
     }
-    public deselect(selectable: SelectableElement) {
+    public deselect(selectable: BoardElement) {
         for(let i = 0; i < this._selection.length; i++) {
-            if(selectable === this._selection[i] && this._selection[i].onDeselected()) {
-                this._selection[i].removeGraphicByTag(this._outlinesGraphic.tag);
+            if(selectable === this._selection[i] && this.selection[i].selectable) {
+                this._selection[i].onDeselected();
+                this._selection[i].removeGraphic(this._outlinesGraphic);
                 this._selection.splice(i, 1);
                 return;
             }
@@ -110,7 +112,7 @@ export default class Game {
     public get board(): Board {
         return this._board;
     }
-    public get selection(): SelectableElement[] {
+    public get selection(): BoardElement[] {
         return Array.from(this._selection);
     }
     public get selected(): boolean {

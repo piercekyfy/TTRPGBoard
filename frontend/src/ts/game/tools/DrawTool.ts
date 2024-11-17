@@ -1,4 +1,4 @@
-import { SelectableElement, DrawingElement } from '../../board/elements';
+import { BoardElement, DrawingElement } from '../../board/elements';
 import Tool from './Tool';
 import CursorImage from '../../../images/palm.png';
 
@@ -25,7 +25,7 @@ export default class DrawTool extends Tool {
             this.onDrawEnd();
         }
     }
-    public onMouseDown(e: MouseEvent, on: SelectableElement | null): void {
+    public onMouseDown(e: MouseEvent, on: BoardElement | null): void {
         if(e.button != 0)
             return;
 
@@ -49,7 +49,7 @@ export default class DrawTool extends Tool {
             this.onDrawBegin(new DrawEvent(e, lastMousePos));
         }
     }
-    public onMouseUp(e: MouseEvent, on: SelectableElement | null): void {
+    public onMouseUp(e: MouseEvent, on: BoardElement| null): void {
         if(e.button != 0)
             return;
 

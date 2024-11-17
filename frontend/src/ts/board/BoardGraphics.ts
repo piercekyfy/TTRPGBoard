@@ -1,5 +1,6 @@
 import Board from './Board';
-import { BoardElement, SelectableElement, Token } from './elements';
+import { BoardGraphic } from './BoardGraphic';
+import { BoardElement, Token } from './elements';
 
 export default class BoardGraphics {
     public readonly board: Board;
@@ -7,6 +8,12 @@ export default class BoardGraphics {
     public constructor(board: Board, ctx: CanvasRenderingContext2D) {
         this.board = board;
         this.context = ctx;
+    }
+    public static getImageData(width: number, height: number, imageSource: HTMLImageElement): Uint8ClampedArray  {
+        let offscreenCanvas = new OffscreenCanvas(width, height);
+        let offscreenCanvasCtx = offscreenCanvas.getContext('2d');
+        offscreenCanvasCtx?.drawImage(imageSource, 0, 0, width, height);
+        return offscreenCanvasCtx?.getImageData(0,0, width, height).data as Uint8ClampedArray;
     }
     public static contourDirLookup: [number,number][] = [[1, 0], [0, -1], [1, 0], [1, 0], [-1, 0], [0, -1], [NaN, NaN], [1, 0], [0, 1], [NaN, NaN], [0, 1], [0, 1], [-1, 0], [0, -1], [-1, 0], [NaN, NaN]];
     // Generates an outline path using the supplied Isovalue Threshold callback with a marching squares algorithm.
@@ -93,12 +100,15 @@ export default class BoardGraphics {
     }
     public drawToken(token: Token) {
         const { scale } = this.board;
-        const { x, y, imgSrc, width, height } = token;
+        const { x, y, imageSource, width, height } = token;
 
-        this.context.drawImage(imgSrc, this.board.toVirtualX(x), this.board.toVirtualY(y), width * scale, height * scale);
+        this.context.drawImage(imageSource, this.board.toVirtualX(x), this.board.toVirtualY(y), width * scale, height * scale);
+    }
+    public renderGraphic(graphic: BoardGraphic) {
+        graphic.render(this);
     }
     public renderElement(element: BoardElement) {
-        element.render(this);
+        element.graphics.forEach(g => g(this, element));
     }
     public getPath(points: [number, number][]): Path2D {
         if(points.length == 0)
@@ -111,10 +121,10 @@ export default class BoardGraphics {
         }
         return path;
     }
-    public isPointInElement(element: SelectableElement, x: number, y: number): boolean {
+    public isPointInElement(element: BoardElement, x: number, y: number): boolean {
         return this.context.isPointInPath(this.getPath(element.getBoundaryPath()), x, y);
     }
-    public drawDebugBorderOn(element: SelectableElement) {
+    public drawDebugBorderOn(element: BoardElement) {
         this.context.stroke(this.getPath(element.getBoundaryPath()));
     }
 }

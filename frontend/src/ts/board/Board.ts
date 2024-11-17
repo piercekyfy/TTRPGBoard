@@ -1,13 +1,14 @@
-import { BoardElement, SelectableElement, GraphicElement, Token } from "./elements";
+import { BoardElement, Token } from "./elements";
 import BoardLayer from "./BoardLayer";
 import BoardGraphics from "./BoardGraphics";
+import { BoardGraphic } from "./BoardGraphic";
 
 export default class Board {
     // _layers is **always** sorted.
     private _layers: BoardLayer[] = [new BoardLayer(this, 99)];
-    private _graphicsLayer: GraphicElement[] = [];
     private readonly _canvas: HTMLCanvasElement;
     private readonly _graphics: BoardGraphics;
+    private graphicFrame: BoardGraphic[] = [];
     private _xOffset: number = 0;
     private _yOffset: number = 0;
     private _scale: number = 1;
@@ -28,11 +29,21 @@ export default class Board {
 
         this._graphics.drawGrid();
 
+        for(const graphic of this.graphicFrame) {
+            this._graphics.renderGraphic(graphic);
+        }
+
         for(const layer of this._layers) {
             for(const element of layer.elements) {
                 this._graphics.renderElement(element);
             }
         }
+    }
+    public addGraphic(graphic: BoardGraphic) { // TODO: Give each layer a 'GraphicFrame' and allow this to be filtered by layer
+        this.graphicFrame.push(graphic);
+    }
+    public removeGraphic(graphic: BoardGraphic) {
+        this.graphicFrame = this.graphicFrame.filter(g => {g != graphic;});
     }
     public toVirtualX(x: number): number {
         return (x + this.xOffset) * this._scale;
@@ -49,11 +60,11 @@ export default class Board {
     public isInVirtualRect(x: number, y: number, virtualX: number, virtualY: number, width: number, height: number): boolean {
         return ((x >= virtualX && x <= virtualX + width) && (y >= virtualY && y <= virtualY + height));
     }
-    public isInElement(element: SelectableElement, x: number, y: number): boolean {
+    public isInElement(element: BoardElement, x: number, y: number): boolean {
         return this._graphics.isPointInElement(element, x, y);
     }
-    public elementsInRect(x: number, y: number, width: number, height: number): SelectableElement[] {
-        const elements: SelectableElement[] = [];
+    public elementsInRect(x: number, y: number, width: number, height: number): BoardElement[] {
+        const elements: BoardElement[] = [];
         for(const element of this.selectableElements) {
             if(this.toVirtualX(element.x) + (element.width * this.scale) > x && this.toVirtualX(element.x) < x + width && (this.toVirtualY(element.y) + (element.height * this.scale) > y && this.toVirtualY(element.y) < y + height)) {
                 elements.push(element);
@@ -61,8 +72,8 @@ export default class Board {
         }
         return elements;
     }
-    public getElementsAt(x: number, y: number, layer?: number): SelectableElement[] {
-        const elements: SelectableElement[] = [];
+    public getElementsAt(x: number, y: number, layer?: number): BoardElement[] {
+        const elements: BoardElement[] = [];
         if(layer){
             const l = this.getLayer(layer);
             if(l == null)
@@ -80,7 +91,7 @@ export default class Board {
 
         return elements;
     }
-    public getTopElementAt(x: number, y: number, layer?: number) : SelectableElement|null {
+    public getTopElementAt(x: number, y: number, layer?: number) : BoardElement|null {
         const result = this.getElementsAt(x, y, layer);
         return result.length == 0 ? null : result[result.length - 1];
     }
@@ -115,9 +126,6 @@ export default class Board {
 
         return element;
     }
-    public onElementModified(layerId: number, element: BoardElement) {
-        
-    }
     private get elements(): BoardElement[] {
         const elements: BoardElement[] = [];
         for(const layer of this._layers) {
@@ -127,11 +135,11 @@ export default class Board {
         }
         return elements;
     }
-    private get selectableElements(): SelectableElement[] {
-        const elements: SelectableElement[] = [];
+    private get selectableElements(): BoardElement[] {
+        const elements: BoardElement[] = [];
         for(const layer of this._layers) {
             for(const element of layer.elements) {
-                if(element instanceof SelectableElement)
+                if(element.selectable)
                     elements.push(element);
             }
         }

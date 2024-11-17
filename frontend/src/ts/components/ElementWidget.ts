@@ -1,13 +1,20 @@
 import { Component, ComponentEvent} from "./Component";
-import { SelectableElement } from "../board/elements";
+import { BoardElement } from "../board/elements";
+import { BoardGraphics } from "../board";
 
-export default class ElementWidget extends Component<SelectableElement> {
+export default class ElementWidget extends Component<BoardElement> {
     override className: string = 'element-widget';
     override template: string = "";
     protected override events: ComponentEvent[] = [];
+    private attachment = {tag: 'widget', render: this.onElementRender.bind(this)}
 
-    public constructor(data: SelectableElement) {
+    public constructor(data: BoardElement) {
         super(data);
+        data.attachGraphic(this.attachment);
+    }
+
+    private onElementRender(graphics: BoardGraphics) {
+        this.render();
     }
 
     override render(): HTMLElement {

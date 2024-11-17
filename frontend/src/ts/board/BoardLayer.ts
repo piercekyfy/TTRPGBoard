@@ -1,5 +1,5 @@
 import Board from "./Board";
-import { BoardElement, SelectableElement } from "./elements";
+import { BoardElement } from "./elements";
 
 export default class BoardLayer {
     public readonly board: Board;
@@ -35,10 +35,7 @@ export default class BoardLayer {
             }
         }
     }
-    public onElementModified(element: BoardElement) {
-        this.board.onElementModified(this.id, element);
-    }
-    public get selectableElements(): SelectableElement[] {
-        return this.elements.filter(e => e instanceof SelectableElement);
+    public get selectableElements(): BoardElement[] {
+        return this.elements.filter(e => e.selectable);
     }
 }
