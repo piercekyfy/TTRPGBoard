@@ -1,5 +1,6 @@
 import { Board, BoardGraphics } from '../board';
 import { BoardElement } from '../board/elements';
+import ScaleWidget from '../components/ScaleWidget';
 import { Tool, MoveTool, DrawTool } from './tools';
 
 export default class Game {
@@ -21,6 +22,7 @@ export default class Game {
             graphics.context.lineWidth = 1;
         }
     }
+    private _scaleWidget: ScaleWidget|null = null;
 
     public constructor(board: Board) {
         this._board = board;
@@ -35,6 +37,8 @@ export default class Game {
             selectable.onSelected();
             this._selection.push(selectable);
             selectable.attachGraphic(this._outlinesGraphic)
+            this._scaleWidget = new ScaleWidget({ parent: selectable });
+            document.body.appendChild(this._scaleWidget.render());
         }
     }
     public deselect(selectable: BoardElement) {
@@ -43,9 +47,11 @@ export default class Game {
                 this._selection[i].onDeselected();
                 this._selection[i].removeGraphic(this._outlinesGraphic);
                 this._selection.splice(i, 1);
+                this._scaleWidget?.destroy();
                 return;
             }
         }
+        
     }
     public clearSelection() {
         // Slower than looping once here but ensures that deselect is always called when an element is removed from the selection.

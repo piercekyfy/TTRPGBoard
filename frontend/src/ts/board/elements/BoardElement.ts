@@ -3,13 +3,13 @@ import BoardLayer from "../BoardLayer";
 import { BoardGraphic } from "../BoardGraphic";
 
 export default abstract class BoardElement {
-    public layer: BoardLayer;
-    public x: number;
-    public y: number;
-    public width: number;
-    public height: number;
+    private _layer: BoardLayer;
+    private _x: number;
+    private _y: number;
+    private _width: number;
+    private _height: number;
     constructor(layer: BoardLayer, x: number, y: number, width: number, height: number) {
-        this.layer = layer;
+        this._layer = layer;
         this.x = x;
         this.y = y;
         this.width = width;
@@ -44,6 +44,33 @@ export default abstract class BoardElement {
             return;
         this.x += (mousePos[0] - lastMousePos[0]) / this.layer.board.scale;
         this.y += (mousePos[1] - lastMousePos[1]) / this.layer.board.scale;
+    }
+    public get layer(): BoardLayer {
+        return this._layer;
+    }
+    public get x(): number {
+        return this._x;
+    }
+    public set x(x: number) {
+        this._x = x;
+    }
+    public get y(): number {
+        return this._y;
+    }
+    public set y(y: number) {
+        this._y = y;
+    }
+    public get width(): number {
+        return this._width;
+    }
+    public set width(width: number) {
+        this._width = width;
+    }
+    public get height(): number {
+        return this._height;
+    }
+    public set height(height: number) {
+        this._height = height;
     }
     public get graphics(): ((graphics: BoardGraphics, caller?: BoardElement) => void)[] {
         return [this.render.bind(this), ...this.childGraphics.map(g => g.render)];

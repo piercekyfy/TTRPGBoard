@@ -32,6 +32,3 @@ document.addEventListener("wheel",     (e: WheelEvent) => {  game.onWheel(e)   }
 
 const toolList: ToolList = new ToolList([new MoveTool(game), new SelectionTool(game), new DrawTool(game)], game); // Perhaps replace with a factory that creates a new Tool when the Game needs it. So that Game can give itself as a dependency.
 document.querySelector('#tools-body')?.replaceWith(toolList.render());
-
-const elmWidget: ElementWidget = new ScaleWidget({ parent: token2 });
-document.body.appendChild(elmWidget.render());

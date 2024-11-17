@@ -1,4 +1,5 @@
 export interface ComponentEvent {
+    // Typically a css selector string, but null will reference the Component's element.
     selector: string|null,
     event: string,
     action: Function
@@ -17,6 +18,12 @@ export abstract class Component<T extends Object> {
 
     abstract render(): HTMLElement;
 
+    public destroy() {
+        if(this.elm) {
+            this.elm.remove();
+        }
+    }
+
     protected createElm(inner: string): HTMLElement {
         if(this.elm == null) {
             this.elm = document.createElement('div');
@@ -24,9 +31,12 @@ export abstract class Component<T extends Object> {
         }
 
         this.elm.innerHTML = inner;
-
+        
         this.events.forEach(event => {
-            (event.selector ? this.elm?.querySelector(event.selector) : this.elm)?.addEventListener(event.event, () => { event.action?.call(this); })
+            const elms = (event.selector ? (this.elm as HTMLElement).querySelectorAll(event.selector) : [this.elm as HTMLElement])
+            for(const elm of elms) {
+                elm.addEventListener(event.event, (e) => { event.action?.call(this, e); })
+            }
         });
 
         return this.elm;
