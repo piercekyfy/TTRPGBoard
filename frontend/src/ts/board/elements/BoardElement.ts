@@ -8,6 +8,7 @@ export default abstract class BoardElement {
     private _y: number;
     private _width: number;
     private _height: number;
+    private _title: string = "";
     constructor(layer: BoardLayer, x: number, y: number, width: number, height: number) {
         this._layer = layer;
         this.x = x;
@@ -71,6 +72,12 @@ export default abstract class BoardElement {
     }
     public set height(height: number) {
         this._height = height;
+    }
+    public get title(): string {
+        return this._title;
+    }
+    public set title(title: string) {
+        this._title = title;
     }
     public get graphics(): ((graphics: BoardGraphics, caller?: BoardElement) => void)[] {
         return [this.render.bind(this), ...this.childGraphics.map(g => g.render)];

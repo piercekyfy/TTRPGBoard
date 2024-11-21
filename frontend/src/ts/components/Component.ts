@@ -18,6 +18,12 @@ export abstract class Component<T extends Object> {
 
     abstract render(): HTMLElement;
 
+    public setVisible(visibility: boolean) {
+        if(this.elm) {
+            this.elm.style.visibility = visibility ? 'visible' : 'hidden';
+        }
+    }
+
     public destroy() {
         if(this.elm) {
             this.elm.remove();
@@ -46,10 +52,6 @@ export abstract class Component<T extends Object> {
         let filled = template;
 
         for(const [key, value] of Object.entries(map) ) {
-            if(value instanceof Component) {
-                const elm = value.render();
-
-            }
             filled = filled.replace(delimiter + key + delimiter, value);
         }
 

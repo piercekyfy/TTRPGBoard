@@ -2,7 +2,7 @@ import { Component, ComponentEvent} from "./Component";
 import { BoardElement } from "../board/elements";
 import { BoardGraphics } from "../board";
 import ToolList from "./ToolList";
-import ElementWidget, { Widget } from "./ElementWidget";
+import ElementWidget, { WidgetData } from "./ElementWidget";
 import LeftArrowImage from "../../images/left-arrow.png";
 import RightArrowImage from "../../images/right-arrow.png";
 
@@ -27,7 +27,7 @@ export default class ScaleWidget extends ElementWidget {
     private dragging: ButtonDir|null = null;
     private lastMouseX: number = 0;
 
-    public constructor(data: Widget) {
+    public constructor(data: WidgetData) {
         super(data);
         if(this.dragging != null)
             this.onDragEnd();
@@ -58,7 +58,7 @@ export default class ScaleWidget extends ElementWidget {
 
     private onDrag(e: MouseEvent) {
         if(this.dragging != null) {
-            this.data.parent.width += (e.clientX - this.lastMouseX) / this.data.parent.layer.board.scale;
+            this.data.parent.width += ((e.clientX - this.lastMouseX) / this.data.parent.layer.board.scale) * this.dragging;
         }
         this.lastMouseX = e.clientX;
     }
@@ -74,6 +74,8 @@ export default class ScaleWidget extends ElementWidget {
     }
 
     override render(): HTMLElement {
-        return super.render();
+        const elm = this.createElm(Component.simpleTemplateFill(this.template, {}));
+
+        return elm;
     }
 }
