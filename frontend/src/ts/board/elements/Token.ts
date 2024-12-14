@@ -1,12 +1,13 @@
 import { BoardLayer, BoardGraphics } from "..";
+import VirtualGrid from "../VirtualGrid";
 import BoardElement from "./BoardElement";
 
 export default class Token extends BoardElement {
     protected boundaryCache: [number, number][]|null = null;
     public imageSource: HTMLImageElement;
     private _scale: number;
-    public constructor(layer: BoardLayer, x: number, y: number, imgSource: HTMLImageElement, width?: number, height?: number) {
-        super(layer, x, y, width ?? imgSource.width, height ?? imgSource.height);
+    public constructor(grid: VirtualGrid, x: number, y: number, imgSource: HTMLImageElement, width?: number, height?: number) {
+        super(grid, x, y, width ?? imgSource.width, height ?? imgSource.height);
         this.imageSource = imgSource;
     }
     protected override render(graphics: BoardGraphics): void {
@@ -38,8 +39,8 @@ export default class Token extends BoardElement {
     }
     public override set width(width: number) {
         this.boundaryCache = null;
-        if(width < this.layer.board.cellSize)
-            this._scale = this.layer.board.cellSize;
+        if(width < this.grid.cellSize)
+            this._scale = this.grid.cellSize;
         else 
             this._scale = width;
         
@@ -49,8 +50,8 @@ export default class Token extends BoardElement {
     }
     public override set height(height: number) {
         this.boundaryCache = null;
-        if(height < this.layer.board.cellSize)
-            this._scale = this.layer.board.cellSize;
+        if(height < this.grid.cellSize)
+            this._scale = this.grid.cellSize;
         else 
             this._scale = height;
     }

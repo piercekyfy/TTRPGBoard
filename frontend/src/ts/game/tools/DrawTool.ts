@@ -61,8 +61,7 @@ export default class DrawTool extends Tool {
     }
     public onWheel(e: WheelEvent): void {}
     private onDrawBegin(e: DrawEvent) {
-        this.selectedDrawing = new DrawingElement(this.board.graphicLayer, this.board.toRealX(e.mousePos[0]), this.board.toRealY(e.mousePos[1]));
-        this.board.graphicLayer.addElement(this.selectedDrawing);
+        this.selectedDrawing = this.board.createDrawing(this.board.graphicLayer.z, [e.mousePos[0], e.mousePos[1]]);
         this._game.clearSelection();
         this._game.select(this.selectedDrawing);
     }
@@ -74,7 +73,10 @@ export default class DrawTool extends Tool {
         this.selectedDrawing = null;
     }
     private addPointToSelected(x: number, y: number) {
-        this.selectedDrawing?.addToPath([this.board.toRealX(x)  - this.selectedDrawing.x,  this.board.toRealY(y) - this.selectedDrawing.y]);
+        if(!this.selectedDrawing)
+            return;
+
+        this.selectedDrawing?.addToPath([x,  y]);
     }
     private closePath() {
         if(this.selectedDrawing)

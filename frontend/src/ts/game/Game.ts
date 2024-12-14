@@ -36,6 +36,7 @@ export default class Game {
         else if (!this._selection.includes(selectable) && selectable.selectable) {
             selectable.onSelected();
             this._selection.push(selectable);
+            this._board.getLayerOf(selectable)?.toTop(selectable);
             selectable.attachGraphic(this._outlinesGraphic)
             this._scaleWidget = new ScaleWidget({ parent: selectable });
             document.body.appendChild(this._scaleWidget.render());

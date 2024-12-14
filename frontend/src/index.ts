@@ -14,7 +14,7 @@ const canvas: HTMLCanvasElement = document.getElementById('game') as HTMLCanvasE
 const board: Board = new Board(canvas, document.documentElement.clientWidth, document.documentElement.clientHeight);
 
 let token = board.createToken(1, 64,64, imgEdwin, 64, 64);
-let token2 = board.createToken(2, 128,64, imgEdwin, 128, 128);
+let token2 = board.createToken(1, 128,64, imgEdwin, 128, 128);
 let token3 = board.createToken(1, 32,64, imgEdwin, 64, 64);
 
 const game = new Game(board);
@@ -34,5 +34,5 @@ document.addEventListener("wheel",     (e: WheelEvent) => {  game.onWheel(e)   }
 const toolList: ToolList = new ToolList([new MoveTool(game), new SelectionTool(game), new DrawTool(game)], game); // Perhaps replace with a factory that creates a new Tool when the Game needs it. So that Game can give itself as a dependency.
 document.querySelector('#tools-body')?.replaceWith(toolList.render());
 
-const wid = new TitleWidget({ parent: token2, default: '', editable: true });
-document.body.appendChild(wid.render());
+//const wid = new TitleWidget({ parent: token2, default: '', editable: true });
+//document.body.appendChild(wid.render());

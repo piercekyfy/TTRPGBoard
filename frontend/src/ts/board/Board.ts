@@ -1,9 +1,10 @@
-import { BoardElement, Token } from "./elements";
+import { BoardElement, DrawingElement, Token } from "./elements";
 import BoardLayer from "./BoardLayer";
 import BoardGraphics from "./BoardGraphics";
 import { BoardGraphic } from "./BoardGraphic";
+import VirtualGrid from "./VirtualGrid";
 
-export default class Board {
+export default class Board implements VirtualGrid {
     // _layers is **always** sorted.
     private _layers: BoardLayer[] = [new BoardLayer(this, 99)];
     private readonly _canvas: HTMLCanvasElement;
@@ -34,7 +35,7 @@ export default class Board {
         }
 
         for(const layer of this._layers) {
-            for(const element of layer.elements) {
+            for(const element of layer.elements()) {
                 this._graphics.renderElement(element);
             }
         }
@@ -78,7 +79,7 @@ export default class Board {
             const l = this.getLayer(layer);
             if(l == null)
                 throw new Error("Specified layer does not exist.");
-            for(const element of l.selectableElements) {
+            for(const element of l.selectableElements()) {
                 if(this.isInElement(element, x, y))
                     elements.push(element);
             }
@@ -90,6 +91,13 @@ export default class Board {
         }
 
         return elements;
+    } 
+    public getLayerOf(element: BoardElement): BoardLayer|null { // TODO: This is horribly inefficient. Look into a better way to do this.
+        for(let layer of this._layers) {
+            if(layer.contains(element))
+                return layer;
+        }
+        return null;
     }
     public getTopElementAt(x: number, y: number, layer?: number) : BoardElement|null {
         const result = this.getElementsAt(x, y, layer);
@@ -105,31 +113,41 @@ export default class Board {
         this.sortLayers();
         
         return layer;
-    }
-    public getLayer(id: number): BoardLayer|null {
+    } // TODO: Realize that 'z' doesn't imply it must be unique. Allow multiple Layers on a Z or figure out something else.
+    public getLayer(z: number): BoardLayer|null {
         for (const layer of this._layers) {
-            if(layer.id === id)
+            if(layer.z === z)
                 return layer;
         }
         return null;
     }
     public sortLayers() {
-        this._layers.sort((a, b) => {return a.id - b.id})
+        this._layers.sort((a, b) => {return a.z - b.z})
     }
     public createToken(layerId: number, x: number, y: number, imgSrc: HTMLImageElement, width?: number, height?: number): Token {
         let layer: BoardLayer|null = this.getLayer(layerId);
         if(layer == null)
             layer = this.createLayer(layerId);
 
-        const element: Token = new Token(layer, x, y, imgSrc, width, height);
-        layer.addElement(element);
+        const element: Token = new Token(this, x, y, imgSrc, width, height);
+        layer.add(element);
+
+        return element;
+    }
+    public createDrawing(layerId: number, firstPoint: [number, number]): DrawingElement {
+        let layer: BoardLayer|null = this.getLayer(layerId);
+        if(layer == null)
+            layer = this.createLayer(layerId); //TODO: Duplicate code, findOrCreate() needed
+
+        const element: DrawingElement = new DrawingElement(this, firstPoint);
+        layer.add(element);
 
         return element;
     }
     private get elements(): BoardElement[] {
         const elements: BoardElement[] = [];
         for(const layer of this._layers) {
-            for(const element of layer.elements) {
+            for(const element of layer.elements()) {
                 elements.push(element);
             }
         }
@@ -138,9 +156,8 @@ export default class Board {
     private get selectableElements(): BoardElement[] {
         const elements: BoardElement[] = [];
         for(const layer of this._layers) {
-            for(const element of layer.elements) {
-                if(element.selectable)
-                    elements.push(element);
+            for(const element of layer.selectableElements()) {
+                elements.push(element);
             }
         }
         return elements;

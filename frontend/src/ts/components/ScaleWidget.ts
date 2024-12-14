@@ -58,7 +58,7 @@ export default class ScaleWidget extends ElementWidget {
 
     private onDrag(e: MouseEvent) {
         if(this.dragging != null) {
-            this.data.parent.width += ((e.clientX - this.lastMouseX) / this.data.parent.layer.board.scale) * this.dragging;
+            this.data.parent.width += ((e.clientX - this.lastMouseX) / this.data.parent.grid.scale) * this.dragging;
         }
         this.lastMouseX = e.clientX;
     }
@@ -70,7 +70,7 @@ export default class ScaleWidget extends ElementWidget {
 
         // Snap to grid
 
-        this.data.parent.width = Math.round(this.data.parent.width / this.data.parent.layer.board.cellSize) * this.data.parent.layer.board.cellSize
+        this.data.parent.width = Math.round(this.data.parent.width / this.data.parent.grid.cellSize) * this.data.parent.grid.cellSize
     }
 
     override render(): HTMLElement {

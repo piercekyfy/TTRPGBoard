@@ -1,16 +1,17 @@
 import BoardGraphics from "../BoardGraphics";
-import BoardLayer from "../BoardLayer";
 import { BoardGraphic } from "../BoardGraphic";
+import VirtualGrid from "../VirtualGrid";
+import { XYGrid } from "..";
 
 export default abstract class BoardElement {
-    private _layer: BoardLayer;
+    private _grid: VirtualGrid;
     private _x: number;
     private _y: number;
     private _width: number;
     private _height: number;
     private _title: string = "";
-    constructor(layer: BoardLayer, x: number, y: number, width: number, height: number) {
-        this._layer = layer;
+    constructor(grid: VirtualGrid, x: number, y: number, width: number, height: number) {
+        this._grid = grid;
         this.x = x;
         this.y = y;
         this.width = width;
@@ -34,7 +35,6 @@ export default abstract class BoardElement {
     public onSelected() {
         if(!this.selectable)
             return;
-        this.layer.moveElementToTop(this);
     }
     public onDeselected() { 
         if(!this.selectable)
@@ -43,11 +43,11 @@ export default abstract class BoardElement {
     public onDrag(lastMousePos: [number, number], mousePos: [number, number]): void {
         if(!this.selectable)
             return;
-        this.x += (mousePos[0] - lastMousePos[0]) / this.layer.board.scale;
-        this.y += (mousePos[1] - lastMousePos[1]) / this.layer.board.scale;
+        this.x += (mousePos[0] - lastMousePos[0]) / this.grid.scale;
+        this.y += (mousePos[1] - lastMousePos[1]) / this.grid.scale;
     }
-    public get layer(): BoardLayer {
-        return this._layer;
+    public get grid(): XYGrid {
+        return this._grid;
     }
     public get x(): number {
         return this._x;
@@ -83,15 +83,15 @@ export default abstract class BoardElement {
         return [this.render.bind(this), ...this.childGraphics.map(g => g.render)];
     }
     public get virtualX(): number {
-        return this.layer.board.toVirtualX(this.x);
+        return this.grid.toVirtualX(this.x);
     }
     public get virtualY(): number {
-        return this.layer.board.toVirtualY(this.y);
+        return this.grid.toVirtualY(this.y);
     }
     public get virtualWidth(): number {
-        return this.width * this.layer.board.scale;
+        return this.width * this.grid.scale;
     }
     public get virtualHeight(): number {
-        return this.height * this.layer.board.scale;
+        return this.height * this.grid.scale;
     }
 }

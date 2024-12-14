@@ -1,41 +1,117 @@
 import Board from "./Board";
 import { BoardElement } from "./elements";
 
+class LayerNode {
+    public constructor(public value: BoardElement, public next: LayerNode|null = null, public prev: LayerNode|null = null) {
+        if(this.next && this.next.prev == null) {
+            this.next.prev = this;
+        }
+    }
+}
+
+/// Functionally a linked list which contains BoardElements in the order they are rendered.
 export default class BoardLayer {
-    public readonly board: Board;
-    public readonly id: number;
-    public elements: BoardElement[] = [];
-    public constructor(board: Board, id: number) {
-        if(id < 0)
-            throw new Error("'id' must be greater than or equal to 0.");
+    private head: LayerNode|null;
+    private tail: LayerNode|null;
+    private _size: number = 0;
 
-        this.board = board;
-        this.id = id;
+    public constructor(readonly board: Board, readonly z: number) {}
+
+    public add(element: BoardElement) {
+        if(this.head) {
+            this.head = new LayerNode(element, this.head);
+        } else {
+            this.head = new LayerNode(element);
+            this.tail = this.head;
+        }
+        this._size++;
     }
-    public moveElementToTop(element: BoardElement) {
+    public remove(element: BoardElement) {
+        let node: LayerNode|null = this.head;
+        while(node != null) {
+            if(node.value === element) {
+                if(node.prev == null) {
+                    this.head = node.next;
+                    this.tail = this.head;
+                }
+                else {
+                    if(node.next == null)
+                        this.tail = node.prev;
+                    node.prev.next = node.next;
+                    
+                }
 
-        for(let i = 0; i < this.elements.length; i++) {
-            if(this.elements[i] === element) {
-                this.elements[i] = this.elements[this.elements.length - 1];
-                this.elements[this.elements.length - 1] = element;
+                this._size--;
                 return;
             }
-        }
 
-        throw new Error("Element does not exist in layer.");
+            node = node.next;
+        }
+        throw new Error("BoardElement does not exist in layer.");
     }
-    public addElement(element: BoardElement) {
-        this.elements.push(element);
+    public contains(element: BoardElement): boolean {
+        let node: LayerNode|null = this.head;
+        while(node != null) {
+            if(node.value === element)
+                return true;
+
+            node = node.next;
+        }
+        return false;
     }
-    public removeElement(element: BoardElement) {
-        for(let i = 0; i < this.elements.length; i++) {
-            if(this.elements[i] === element) {
-                this.elements.splice(i, 1);
+    public toTop(element: BoardElement) {
+        if(this.size <= 1)
+            return;
+
+        let node: LayerNode|null = this.head;
+        while(node != null) {
+            if(node.value == element) {
+                if(node == this.tail)
+                    return;
+                
+                const tail = (this.tail as LayerNode);
+                
+                if(node == this.head) {
+                    this.head = node.next;
+                    if(this.head) {
+                        this.head.prev = null;
+                    }
+                } else {
+                    if(node.prev != null)
+                        node.prev.next = node.next;
+                    if(node.next != null)
+                        node.next.prev = node.prev;
+                }
+
+                node.next = null;
+                node.prev = this.tail;
+                if(this.tail != null)
+                    this.tail.next = node;
+                this.tail = node;
+
                 return;
             }
+            node = node.next;
+        }
+        throw new Error("BoardElement does not exist in layer.");
+    }
+    
+    public *elements() {
+        let node: LayerNode|null = this.head;
+        while (node != null) {
+            yield node.value;
+            node = node.next;
         }
     }
-    public get selectableElements(): BoardElement[] {
-        return this.elements.filter(e => e.selectable);
+    public *selectableElements() {
+        let node: LayerNode|null = this.head;
+        while (node != null) {
+            if(node.value.selectable)
+                yield node.value;
+            node = node.next;
+        }
+    }
+    public get size() {
+        return this._size;
     }
 }
